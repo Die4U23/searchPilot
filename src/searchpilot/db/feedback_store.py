@@ -30,9 +30,9 @@ class PostgresFeedbackStore:
                 """
                 INSERT INTO feedback_events (
                     idempotency_key, request_id, item_id, kind, event_at,
-                    user_id, position, content_hash
+                    user_id, position, content_hash, model_version
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (idempotency_key) DO NOTHING
                 RETURNING event_id, received_at
                 """,
@@ -45,6 +45,7 @@ class PostgresFeedbackStore:
                     event.user_id,
                     event.position,
                     digest,
+                    event.model_version,
                 ),
             ).fetchone()
             if row is not None:

@@ -40,6 +40,7 @@ def feedback(body: FeedbackRequest, store: FeedbackDep, items: ItemsDep) -> Feed
             event_at=body.event_at,
             user_id=body.user_id,
             position=body.position,
+            model_version=body.model_version,
         )
     )
     return FeedbackResponse(
