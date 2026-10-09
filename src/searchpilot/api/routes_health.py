@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from searchpilot.api.deps import FeedbackDep, ProbesDep, RecommendDep, SearchDep
+from searchpilot.api.deps import CtrDep, FeedbackDep, ProbesDep, RecommendDep, SearchDep
 from searchpilot.contracts import LiveResponse, ReadyResponse
 from searchpilot.errors import NOT_READY, ApiError, error_envelope
 
@@ -26,6 +26,7 @@ def ready(
     search: SearchDep,
     recommend: RecommendDep,
     feedback: FeedbackDep,
+    ctr: CtrDep,
 ) -> ReadyResponse | JSONResponse:
     # 端口缺失（启动时加载失败）本身就是未就绪；探针负责数据库等外部依赖。
     checks: dict[str, bool] = {
@@ -36,6 +37,8 @@ def ready(
     if search is not None:
         checks["vector_index"] = bool(search.vector_ready)
         checks["ltr"] = bool(search.ltr_ready)
+    if ctr is not None and hasattr(ctr, "ctr_ready"):
+        checks["ctr"] = bool(ctr.ctr_ready)
     for probe in probes:
         try:
             checks.update({name: bool(ok) for name, ok in probe.check().items()})

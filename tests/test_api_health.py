@@ -128,3 +128,14 @@ def test_unknown_route_uses_error_envelope(make_client: MakeClient, fakes: Simpl
     assert response.status_code == 404
     fakes.assert_error_envelope(response.json(), "INVALID_INPUT", retryable=False)
     assert response.json()["error"]["request_id"] == response.headers["X-Request-Id"]
+
+
+def test_ready_503_when_ctr_not_ready(make_client: MakeClient, fakes: SimpleNamespace) -> None:
+    client = _ready_client(make_client, fakes, probes=[fakes.FakeProbe({"database": True})])
+    client.app.state.ctr = SimpleNamespace(ctr_ready=False)
+    response = client.get("/health/ready")
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "not_ready"
+    assert body["checks"]["ctr"] is False
+    fakes.assert_error_envelope(body, "NOT_READY", retryable=True)

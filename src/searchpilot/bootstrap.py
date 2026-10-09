@@ -31,6 +31,7 @@ def create_app(
     feedback: FeedbackStore | None = None,
     items: ItemStore | None = None,
     probes: Sequence[ReadinessProbe] = (),
+    ctr: object | None = None,
 ) -> FastAPI:
     """构造应用；依赖放在 app.state，路由通过 Depends 读取。None 表示该能力未就绪（503）。"""
     closers: list[Callable[[], object]] = []
@@ -51,6 +52,7 @@ def create_app(
     app.state.feedback = feedback
     app.state.items = items
     app.state.probes = tuple(probes)
+    app.state.ctr = ctr
     app.state.closers = closers
     install_api(app)
     return app
@@ -123,8 +125,18 @@ def build_default_app() -> FastAPI:
             lambda: _attr("searchpilot.feedback.memory", "InMemoryFeedbackStore")(),
         )
 
+    ctr = _load(
+        "ctr runtime",
+        lambda: _attr("searchpilot.ctr.runtime", "load_ctr")(settings.artifact_dir),
+    )
+
     app = create_app(
-        search=search, recommend=recommend, feedback=feedback, items=items, probes=probes
+        search=search,
+        recommend=recommend,
+        feedback=feedback,
+        items=items,
+        probes=probes,
+        ctr=ctr,
     )
     if pool is not None:
         app.state.closers.append(pool.close)
