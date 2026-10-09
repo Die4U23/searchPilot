@@ -47,3 +47,42 @@ def reciprocal_rank_fusion(
             rank += 1
             scores[item_id] = scores.get(item_id, 0.0) + weight / (k + rank)
     return sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
+
+
+def normalized_score_fusion(
+    rankings: Sequence[Sequence[tuple[str, float]]],
+    *,
+    weights: Sequence[float] | None = None,
+) -> list[tuple[str, float]]:
+    """把每一路分数各自缩放到 0–1 再加权平均。只作对照，不是默认融合。
+
+    每一路是 ``[(item_id, raw_score), ...]``。空路跳过。并列按 ``item_id`` 升序。
+    """
+    usable = [list(ranking) for ranking in rankings if ranking]
+    if not usable:
+        return []
+    if weights is None:
+        weights = [1.0] * len(usable)
+    if len(weights) != len(usable):
+        raise ValueError("weights length does not match non-empty rankings")
+    if any(weight < 0 for weight in weights):
+        raise ValueError("weights must be non-negative")
+    totals: dict[str, float] = {}
+    weight_sum = 0.0
+    for ranking, weight in zip(usable, weights, strict=True):
+        scores = [score for _item, score in ranking]
+        low = min(scores)
+        high = max(scores)
+        span = high - low
+        seen: set[str] = set()
+        for item_id, score in ranking:
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+            scaled = 0.0 if span == 0 else (score - low) / span
+            totals[item_id] = totals.get(item_id, 0.0) + weight * scaled
+        weight_sum += weight
+    if weight_sum == 0:
+        return []
+    averaged = {item_id: total / weight_sum for item_id, total in totals.items()}
+    return sorted(averaged.items(), key=lambda item: (-item[1], item[0]))
