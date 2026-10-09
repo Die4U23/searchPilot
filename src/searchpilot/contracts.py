@@ -167,3 +167,44 @@ class CtrScoreResponse(_Response):
     model_version: str
     calibrator_version: str
     results: list[CtrScoreHitOut]
+
+
+# ---------------------------------------------------------------------------
+# 实验登记
+# ---------------------------------------------------------------------------
+
+
+class MetricPointOut(BaseModel):
+    name: str
+    split: str
+    segment: str | None = None
+    value: float
+    source: str
+
+
+class ExperimentResponse(BaseModel):
+    experiment_id: str
+    kind: str
+    config: dict[str, Any]
+    code_commit: str | None = None
+    data_version: str
+    protocol_version: str
+    source: str
+    source_ref: dict[str, Any] | None = None
+    metrics: list[MetricPointOut]
+
+
+# ---------------------------------------------------------------------------
+# 只读 Agent
+# ---------------------------------------------------------------------------
+
+
+class AgentAnalyzeRequest(_Request):
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class AgentAnalyzeResponse(_Response):
+    trace_id: str
+    answer: str
+    citations: list[str]
+    tool_trace: list[dict[str, Any]]

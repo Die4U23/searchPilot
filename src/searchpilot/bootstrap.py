@@ -32,6 +32,7 @@ def create_app(
     items: ItemStore | None = None,
     probes: Sequence[ReadinessProbe] = (),
     ctr: object | None = None,
+    experiments: object | None = None,
 ) -> FastAPI:
     """构造应用；依赖放在 app.state，路由通过 Depends 读取。None 表示该能力未就绪（503）。"""
     closers: list[Callable[[], object]] = []
@@ -53,6 +54,7 @@ def create_app(
     app.state.items = items
     app.state.probes = tuple(probes)
     app.state.ctr = ctr
+    app.state.experiments = experiments
     app.state.closers = closers
     install_api(app)
     return app
@@ -124,6 +126,15 @@ def build_default_app() -> FastAPI:
             "in-memory feedback store",
             lambda: _attr("searchpilot.feedback.memory", "InMemoryFeedbackStore")(),
         )
+    # 登记文件不存在则是空登记，不因此启动失败。有数据库时也先用这份文件，
+    # 避免只配了连接串就把实验查询打成 503。
+    registry = settings.artifact_dir / "experiments" / "registry.json"
+
+    def load_registry() -> object:
+        store_cls = _attr("searchpilot.experiments.store", "InMemoryExperimentStore")
+        return store_cls.load(registry)
+
+    experiments = _load("experiment registry", load_registry)
 
     ctr = _load(
         "ctr runtime",
@@ -137,6 +148,7 @@ def build_default_app() -> FastAPI:
         items=items,
         probes=probes,
         ctr=ctr,
+        experiments=experiments,
     )
     if pool is not None:
         app.state.closers.append(pool.close)
