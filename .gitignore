@@ -18,6 +18,13 @@ build/
 .DS_Store
 Thumbs.db
 
+# --- 本地工具配置（不上传） ---
+.claude/
+.cursor/
+.agent/
+AGENTS.md
+CLAUDE.md
+
 # --- Env & secrets ---
 .env
 .env.local
@@ -26,3 +33,14 @@ Thumbs.db
 
 # --- Logs ---
 *.log
+
+# --- SearchPilot data & artifacts (不入库，见 docs/dev/build-plan.md) ---
+data/raw/
+data/processed/
+artifacts/
+
+# --- Tool caches ---
+.tmp/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

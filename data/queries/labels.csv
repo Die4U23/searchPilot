@@ -1,0 +1,6 @@
+query_id,item_id,grade,annotator
+q_example_001,N12345,3,example
+q_example_002,N23456,2,example
+q_example_003,N34567,3,example
+q_example_004,N45678,2,example
+q_example_005,N56789,0,example

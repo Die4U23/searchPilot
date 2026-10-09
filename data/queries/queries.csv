@@ -1,0 +1,6 @@
+query_id,query_text,query_type,split
+q_example_001,N12345 election update,exact_entity,train
+q_example_002,automobile market outlook,synonym,train
+q_example_003,Seattle weather weekend,multi_condition,val
+q_example_004,artifical inteligence news,misspelling_or_abbrev,test
+q_example_005,underwater city council on Mars,no_answer,test
