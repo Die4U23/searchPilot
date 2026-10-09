@@ -93,6 +93,7 @@ class QueryEvaluation:
     has_relevant: bool
     zero_result: bool
     metrics: Mapping[str, float | None]
+    model_version: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +240,7 @@ def evaluate_query(
         has_relevant=has_relevant(grades),
         zero_result=not ranked,
         metrics=metrics,
+        model_version=result.model_version,
     )
 
 
@@ -303,8 +305,10 @@ def evaluate_search(
     segments = {name: aggregate(items, cfg) for name, items in sorted(by_type.items())}
 
     stamp = (now or datetime.now(UTC)).astimezone(UTC).isoformat(timespec="seconds")
+    versions = {item.model_version for item in evaluations}
+    model_version = next(iter(versions)) if len(versions) == 1 else port.model_version
     return EvalReport(
-        model_version=port.model_version,
+        model_version=model_version,
         split=split,
         config=cfg,
         evaluated_at=stamp,

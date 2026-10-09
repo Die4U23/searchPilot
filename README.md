@@ -41,6 +41,9 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 # 3. 建 BM25 倒排索引到 artifacts\search\bm25\（打印 model_version / doc_count / vocab_size）
 .venv\Scripts\python.exe scripts\build_index.py --data-dir data --artifact-dir artifacts
 
+# 3b.（可选，V1）建 bge-small 向量索引。需要先 pip install -e ".[vector]"
+.venv\Scripts\python.exe scripts\build_vector_index.py --data-dir data --artifact-dir artifacts
+
 # 4. 离线评估
 #    搜索：按 query_type 分组的 nDCG@10 / MRR@10 / Recall@50 + 失败样例（查询集见 data\queries\，标注规范见 docs\data\annotation-guideline.md）
 .venv\Scripts\python.exe scripts\evaluate_search.py --artifact-dir artifacts --queries data\queries\queries.csv --labels data\queries\labels.csv --split test --out artifacts\search\eval
