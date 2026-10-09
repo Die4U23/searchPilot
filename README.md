@@ -32,7 +32,7 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 ### 数据 → 索引 → 评估 → 服务
 
 ```powershell
-# 1. 下载并解压 MIND Small（官方 blob 已关闭公共访问，脚本使用 Recommenders 团队镜像）
+# 1. 下载并解压 MIND Small（官方 blob 已关闭公共访问，脚本使用 Hugging Face 上的 Recommenders/MIND）
 .venv\Scripts\python.exe scripts\download_mind.py --raw-dir data\raw\mind
 
 # 2. 解析、时间切分、写 Parquet 与 manifest 到 data\processed\<data_version>\

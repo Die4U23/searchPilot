@@ -11,11 +11,12 @@ from pathlib import Path
 from typing import Any
 
 # 官方 blob（mind201910small.blob.core.windows.net）自 2024-07 起关闭公共访问（HTTP 409
-# PublicAccessNotPermitted），见 msnews/MIND#17。改用 Microsoft Recommenders 团队维护的镜像
-# （recommenders-team/recommenders#2145）。
+# PublicAccessNotPermitted），见 msnews/MIND#17。2024 年的 z20 镜像
+# （recodatasets.z20.web.core.windows.net，recommenders#2145）到 2026-10-09 已是 NXDOMAIN。
+# 与 recommenders/datasets/mind.py 当前常量一致，改用 Hugging Face 上的 Recommenders/MIND。
 MIND_URLS = {
-    "train": "https://recodatasets.z20.web.core.windows.net/newsrec/MINDsmall_train.zip",
-    "dev": "https://recodatasets.z20.web.core.windows.net/newsrec/MINDsmall_dev.zip",
+    "train": "https://huggingface.co/datasets/Recommenders/MIND/resolve/main/MINDsmall_train.zip",
+    "dev": "https://huggingface.co/datasets/Recommenders/MIND/resolve/main/MINDsmall_dev.zip",
 }
 DOWNLOAD_MANIFEST = "download_manifest.json"
 

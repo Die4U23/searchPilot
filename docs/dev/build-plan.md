@@ -120,7 +120,7 @@
 | 工作流 | 状态 | 备注 |
 |---|---|---|
 | A 骨架与服务 | 完成，验收通过 | 101 个测试过；`filters.category` 经 `ItemStore` 后过滤；`/health/ready` 的 checks 含 search/recommend/feedback 端口是否注入 |
-| B 数据与数据库 | 完成，验收通过 | 单元测试过；`tests/test_db_*` 为 integration，未设 `SEARCHPILOT_DATABASE_URL` 时明确 skip；MIND 下载 URL 已换成 `recodatasets.z20.web.core.windows.net/newsrec/`（官方 blob 已关闭公共访问），但本机代理对该域名不通，数据尚未落地 |
+| B 数据与数据库 | 完成，验收通过 | 单元测试过；`tests/test_db_*` 为 integration，未设 `SEARCHPILOT_DATABASE_URL` 时明确 skip；MIND 下载 URL 已从失效的 z20 镜像改为 Hugging Face `Recommenders/MIND` 的 MINDsmall_{train,dev}.zip（官方 blob 仍是 HTTP 409；z20 主机名已 NXDOMAIN） |
 | C 搜索核心与评估 | 源码完成，测试写了一半，**四条质量命令一条都没跑** | 已有：`search/*`、`eval/*`、`scripts/build_index.py`、`scripts/evaluate_search.py`、`tests/test_search_{normalize,index,bm25,fusion}.py`。缺：`tests/test_search_artifacts.py`、`test_search_service.py`、`test_eval_metrics.py`、`test_eval_search_eval.py`。ruff 已知 6 处（E501、I001、4 个文件待 format）。设计选择：filters 走 `BM25SearchService.search_with_filters()` 额外方法；`BM25Scorer(idf_variant="okapi")` 用于与 rank_bm25 逐文档数值对齐，生产默认 Lucene idf；无相关文档查询 ndcg/recall/rr 返回 None 并计入 `skipped_no_relevant` |
 | D 回退推荐与反馈 | 完成，验收通过 | 24 个测试过；`resolve_data_version` 已公开 |
 
