@@ -105,6 +105,7 @@ class FeedbackRequest(_Request):
     event_at: AwareDatetime
     user_id: str | None = Field(default=None, min_length=1, max_length=USER_ID_MAX_CHARS)
     position: int | None = Field(default=None, ge=0)
+    model_version: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class FeedbackResponse(_Response):

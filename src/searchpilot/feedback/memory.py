@@ -25,14 +25,14 @@ class InMemoryFeedbackStore(FeedbackStore):
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._by_key: dict[str, tuple[str, FeedbackWriteResult]] = {}
+        self._by_key: dict[str, tuple[str, FeedbackWriteResult, FeedbackEvent]] = {}
 
     def write(self, event: FeedbackEvent) -> FeedbackWriteResult:
         digest = content_hash(event)
         with self._lock:
             existing = self._by_key.get(event.idempotency_key)
             if existing is not None:
-                stored_digest, result = existing
+                stored_digest, result, _stored = existing
                 if stored_digest != digest:
                     raise IdempotencyConflictError(
                         f"idempotency_key {event.idempotency_key!r} "
@@ -50,8 +50,13 @@ class InMemoryFeedbackStore(FeedbackStore):
                 replayed=False,
                 received_at=received_at,
             )
-            self._by_key[event.idempotency_key] = (digest, result)
+            self._by_key[event.idempotency_key] = (digest, result, event)
             return result
+
+    def get_event(self, idempotency_key: str) -> FeedbackEvent | None:
+        with self._lock:
+            existing = self._by_key.get(idempotency_key)
+            return None if existing is None else existing[2]
 
     def count(self) -> int:
         with self._lock:
