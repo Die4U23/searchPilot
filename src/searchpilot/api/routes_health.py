@@ -33,6 +33,9 @@ def ready(
         "recommend": recommend is not None,
         "feedback": feedback is not None,
     }
+    if search is not None:
+        checks["vector_index"] = bool(search.vector_ready)
+        checks["ltr"] = bool(search.ltr_ready)
     for probe in probes:
         try:
             checks.update({name: bool(ok) for name, ok in probe.check().items()})

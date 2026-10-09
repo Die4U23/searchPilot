@@ -1,4 +1,4 @@
-"""对比 bm25、vector、hybrid 的离线检索指标。
+"""对比 bm25、vector、hybrid、ltr 的离线检索指标。
 
 用法::
 
@@ -29,7 +29,7 @@ from searchpilot.eval.search_eval import (
 from searchpilot.ports import SearchMode
 from searchpilot.search.service import SearchNotReadyError, build_search_service
 
-MODES: tuple[SearchMode, ...] = ("bm25", "vector", "hybrid")
+MODES: tuple[SearchMode, ...] = ("bm25", "vector", "hybrid", "ltr")
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,7 +168,7 @@ def render_comparison(outcomes: Sequence[_ModeOutcome], *, split_label: str) -> 
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Compare bm25, vector, and hybrid search metrics")
+    parser = argparse.ArgumentParser(description="Compare bm25, vector, hybrid, and ltr metrics")
     parser.add_argument(
         "--artifact-dir",
         type=Path,

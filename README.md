@@ -3,7 +3,7 @@
 一个可评估的搜索与广告排序实验平台：**BM25 / 向量 / RRF 搜索 + 广告 CTR 预估与校准 + 回退推荐 + 实验来源登记**。
 上游 EvoRec 的实验结果只会以**标注来源**（`source`、`source_ref`、commit、SHA-256）的方式被引用，不会被当作本项目的实测结论。
 
-> 当前阶段：MVP 骨架。已实现服务层（健康检查、搜索、回退推荐、反馈接口）；向量检索、LTR、CTR/校准、eCPM 对照、实验登记与 Agent 均为**规划中**。
+> 当前阶段：MVP 骨架 + 检索 V1。已实现服务层（健康检查、搜索 BM25 / 向量 / RRF / LTR、回退推荐、反馈接口）；CTR/校准、eCPM 对照、实验登记与 Agent 均为**规划中**。
 
 ## 快速开始
 
@@ -44,9 +44,14 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 # 3b.（可选，V1）建 bge-small 向量索引。需要先 pip install -e ".[vector]"
 .venv\Scripts\python.exe scripts\build_vector_index.py --data-dir data --artifact-dir artifacts
 
+# 3c.（可选，V1）训练线性 pairwise LTR（只读 split=train；需要向量索引）
+.venv\Scripts\python.exe scripts\train_ltr.py --data-dir data --artifact-dir artifacts
+
 # 4. 离线评估
 #    搜索：按 query_type 分组的 nDCG@10 / MRR@10 / Recall@50 + 失败样例（查询集见 data\queries\，标注规范见 docs\data\annotation-guideline.md）
 .venv\Scripts\python.exe scripts\evaluate_search.py --artifact-dir artifacts --queries data\queries\queries.csv --labels data\queries\labels.csv --split test --out artifacts\search\eval
+#    多模式对比（bm25 / vector / hybrid / ltr），输出 search_mode_compare_<split>.md
+.venv\Scripts\python.exe scripts\compare_search_modes.py --artifact-dir artifacts --queries data\queries\queries.csv --labels data\queries\labels.csv --split test --out artifacts\search\eval
 #    回退推荐：Popular / ItemCF 在 dev 切分上的 Recall@20 / nDCG@10 / coverage@10，按冷启动分段
 .venv\Scripts\python.exe scripts\evaluate_fallback.py --data-dir data --output-json artifacts\recommend\eval.json --output-md artifacts\recommend\eval.md
 
