@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from searchpilot.search.fusion import reciprocal_rank_fusion
+from searchpilot.search.fusion import normalized_score_fusion, reciprocal_rank_fusion
 
 
 def test_rrf_two_rankings_hand_computed() -> None:
@@ -65,3 +65,10 @@ def test_rrf_invalid_arguments() -> None:
         reciprocal_rank_fusion([["a"], ["b"]], weights=[1.0])
     with pytest.raises(ValueError):
         reciprocal_rank_fusion([["a"]], weights=[-1.0])
+
+
+def test_normalized_score_fusion_does_not_add_raw_scores() -> None:
+    fused = normalized_score_fusion([[("A", 100.0), ("B", 0.0)], [("B", 1.0), ("A", 0.0)]])
+    assert [item for item, _score in fused] == ["A", "B"]
+    assert dict(fused)["A"] == pytest.approx(0.5)
+    assert dict(fused)["B"] == pytest.approx(0.5)
