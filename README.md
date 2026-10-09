@@ -102,10 +102,35 @@ docs/dev/           并行开发契约（build-plan.md）
 | `POST /search` | `query`、`limit`、`mode`（`bm25` 默认）、`filters.category` |
 | `POST /recommend` | `user_id`、`limit`；仅回退通道，返回 `cold_start` |
 | `POST /feedback` | 带 `idempotency_key` 的幂等写入，成功 201，冲突 409 |
+| `POST /ctr/score` | CTR 打分；模型未加载时 503，不返回空列表 |
+| `GET /experiments/{experiment_id}` | 实验配置、指标、`source` 与 `source_ref` |
+| `POST /agent/analyze` | 只读实验分析；只用六个窄工具 |
 
 所有响应带 `request_id`（同时在响应头 `X-Request-Id`）；错误统一为
 `{"error": {"code", "message", "retryable", "request_id"}}`。字段、限制与错误码的完整定义见
-[docs/dev/build-plan.md](docs/dev/build-plan.md) 第 4 节。`/ctr/score`、`/experiments/{id}`、`/agent/analyze` 属于**规划中**，尚未实现。
+[docs/dev/build-plan.md](docs/dev/build-plan.md) 第 4 节。
+
+## 已测结果（2026-10-09）
+
+同一套 15 条 test 查询，数据版本 `d3a904f41240`。标注由两个模型会话完成，不是人工双标，不能当作 PRD 要求的人工验收结论。
+
+| 方案 | nDCG@10 | MRR@10 | Recall@50 |
+|---|---:|---:|---:|
+| BM25 `bm25-4f46b3d8` | 0.6396 | 0.7143 | 0.7500 |
+| 向量 `vector-b92663fd` | 0.7769 | 0.8095 | 0.9452 |
+| RRF `hybrid-51d4dcfb` | 0.7214 | 0.7679 | 1.0000 |
+| LTR `ltr-4574f8f4` | 0.4596 | 0.4595 | 0.7175 |
+
+LTR 低于 RRF，这是保留的负结果。CTR 抽样 test 上 LR AUC 0.5330，MLP 温度缩放后 ECE 0.0155，AUC 仍为 0.4886。合成出价 eCPM 的 Top-1 一致率 0.8998，不是真实广告收入。
+
+## 已知限制
+
+- 本机没有 PostgreSQL 密码时，实验登记用 `artifacts/experiments/registry.json`，不写数据库。
+- 查询标注不是人工双标。
+- 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
+- 向量、重排、CTR 的分阶段压测是 UNRUN。BM25 进程内 100 次顺序请求（Windows 11，Python 3.12.6，无 `--reload`）：p50 2.827 ms，p95 5.065 ms，p99 5.801 ms，约 315 req/s。详见 `docs/data/bench.md`。
+- `docker compose up` 不会自动迁移或导入物品。
+- 没有真实的 EvoRec 结果文件时，导入器用本地夹具。跨来源比较返回不可比。
 
 ## 与 EvoRec 的边界
 
