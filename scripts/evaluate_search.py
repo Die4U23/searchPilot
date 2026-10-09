@@ -6,7 +6,8 @@
         --queries data/queries/queries.csv --labels data/queries/labels.csv \
         --split test --out artifacts/search/eval
 
-输出 ``<out>/search_eval_<split>_<model_version>.json`` 与同名 ``.md``，并在控制台打印汇总表。
+输出 ``<out>/search_eval_<split>_<mode>_<model_version>.json``
+与同名 ``.md``，并在控制台打印汇总表。
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from pathlib import Path
 
 from searchpilot.eval.report import summary_lines, write_json, write_markdown
 from searchpilot.eval.search_eval import EvalConfig, evaluate_from_files
-from searchpilot.search.service import SearchNotReadyError, load_bm25_service
+from searchpilot.search.service import SearchNotReadyError, build_search_service
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -39,6 +40,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", type=Path, default=Path("artifacts/search/eval"))
     parser.add_argument("--failures", type=int, default=10, help="number of failure samples")
+    parser.add_argument(
+        "--mode",
+        default="bm25",
+        choices=["bm25", "vector", "hybrid", "ltr"],
+        help="search mode passed to the service",
+    )
     args = parser.parse_args(argv)
 
     for path in (args.queries, args.labels):
@@ -46,20 +53,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: file not found: {path}", file=sys.stderr)
             return 2
     try:
-        service = load_bm25_service(args.artifact_dir)
+        service = build_search_service(args.artifact_dir)
     except SearchNotReadyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
     split = None if args.split == "all" else args.split
-    config = EvalConfig(failure_count=args.failures)
+    config = EvalConfig(failure_count=args.failures, mode=args.mode)
     try:
         report = evaluate_from_files(service, args.queries, args.labels, split=split, config=config)
-    except ValueError as exc:
+    except (ValueError, SearchNotReadyError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    stem = f"search_eval_{args.split}_{report.model_version}"
+    stem = f"search_eval_{args.split}_{args.mode}_{report.model_version}"
     json_path = args.out / f"{stem}.json"
     md_path = args.out / f"{stem}.md"
     write_json(report, json_path)
