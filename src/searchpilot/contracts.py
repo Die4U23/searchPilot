@@ -138,3 +138,32 @@ class ReadyResponse(BaseModel):
     status: str
     checks: dict[str, bool]
     error: ErrorBody | None = None
+
+
+# ---------------------------------------------------------------------------
+# CTR 打分
+# ---------------------------------------------------------------------------
+
+
+class CtrCandidate(_Request):
+    item_id: str = Field(pattern=ITEM_ID_PATTERN)
+    bid: float | None = Field(default=None, gt=0)
+
+
+class CtrScoreRequest(_Request):
+    user_id: str = Field(min_length=1, max_length=USER_ID_MAX_CHARS)
+    candidates: list[CtrCandidate] = Field(min_length=1, max_length=100)
+    calibrated: bool = True
+
+
+class CtrScoreHitOut(BaseModel):
+    item_id: str
+    pctr: float
+    pctr_calibrated: float
+    ecpm: float | None
+
+
+class CtrScoreResponse(_Response):
+    model_version: str
+    calibrator_version: str
+    results: list[CtrScoreHitOut]

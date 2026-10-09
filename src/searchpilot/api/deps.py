@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from searchpilot.config import Settings
+from searchpilot.ctr.runtime import CtrRuntime
 from searchpilot.ports import (
     FeedbackStore,
     ItemStore,
@@ -47,9 +48,15 @@ def get_probes(request: Request) -> Sequence[ReadinessProbe]:
     return probes
 
 
+def get_ctr(request: Request) -> CtrRuntime | None:
+    service: CtrRuntime | None = request.app.state.ctr
+    return service
+
+
 SettingsDep = Annotated[Settings, Depends(get_app_settings)]
 SearchDep = Annotated[SearchPort | None, Depends(get_search)]
 RecommendDep = Annotated[RecommendPort | None, Depends(get_recommend)]
 FeedbackDep = Annotated[FeedbackStore | None, Depends(get_feedback)]
 ItemsDep = Annotated[ItemStore | None, Depends(get_items)]
 ProbesDep = Annotated[Sequence[ReadinessProbe], Depends(get_probes)]
+CtrDep = Annotated[CtrRuntime | None, Depends(get_ctr)]
