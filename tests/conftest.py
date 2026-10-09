@@ -37,6 +37,9 @@ class FakeSearch:
         hits: Sequence[SearchHit] | None = None,
         model_version: str = "bm25-test0001",
         error: Exception | None = None,
+        *,
+        vector_ready: bool = True,
+        ltr_ready: bool = True,
     ) -> None:
         self.hits = (
             tuple(hits)
@@ -49,11 +52,16 @@ class FakeSearch:
         )
         self._model_version = model_version
         self.error = error
+        self.vector_ready = vector_ready
+        self.ltr_ready = ltr_ready
         self.calls: list[tuple[str, int, str]] = []
 
     @property
     def model_version(self) -> str:
         return self._model_version
+
+    vector_ready: bool
+    ltr_ready: bool
 
     def search(self, query: str, limit: int, mode: SearchMode) -> SearchResult:
         self.calls.append((query, limit, mode))

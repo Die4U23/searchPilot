@@ -35,6 +35,8 @@ def test_ready_200_with_all_dependencies(make_client: MakeClient, fakes: SimpleN
         "search": True,
         "recommend": True,
         "feedback": True,
+        "vector_index": True,
+        "ltr": True,
         "database": True,
     }
 
@@ -63,6 +65,27 @@ def test_ready_503_when_any_of_several_probes_false(
     response = client.get("/health/ready")
     assert response.status_code == 503
     assert response.json()["checks"]["vector_index"] is False
+
+
+def test_ready_503_when_search_vector_not_ready(
+    make_client: MakeClient, fakes: SimpleNamespace
+) -> None:
+    search = fakes.FakeSearch()
+    search.vector_ready = False
+    search.ltr_ready = True
+    client = make_client(
+        search=search,
+        recommend=fakes.FakeRecommend(),
+        feedback=fakes.FakeFeedbackStore(),
+        probes=[fakes.FakeProbe({"database": True})],
+    )
+    response = client.get("/health/ready")
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "not_ready"
+    assert body["checks"]["vector_index"] is False
+    assert body["checks"]["ltr"] is True
+    fakes.assert_error_envelope(body, "NOT_READY", retryable=True)
 
 
 def test_ready_503_when_ports_missing(make_client: MakeClient) -> None:

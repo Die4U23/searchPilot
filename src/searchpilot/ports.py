@@ -70,6 +70,12 @@ class SearchPort(Protocol):
     @property
     def model_version(self) -> str: ...
 
+    @property
+    def vector_ready(self) -> bool: ...
+
+    @property
+    def ltr_ready(self) -> bool: ...
+
 
 class ItemStore(Protocol):
     """按 ID 读取文档。实现方：searchpilot.db（PostgreSQL）或内存实现。"""
