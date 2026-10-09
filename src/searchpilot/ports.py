@@ -131,6 +131,7 @@ class FeedbackEvent:
     event_at: datetime  # 必须带时区
     user_id: str | None = None
     position: int | None = None
+    model_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,6 +154,9 @@ def feedback_content_hash(event: FeedbackEvent) -> str:
     3. ``event_at`` 转 UTC 后 ``isoformat(timespec="microseconds")``（始终六位微秒 + ``+00:00``）；
     4. 编码为 JSON 数组，``ensure_ascii=False``、``separators=(",", ":")``、``allow_nan=False``；
     5. 对 UTF-8 字节做 SHA-256，返回十六进制。
+
+    ``model_version`` 不参与幂等比较；同键同内容但 ``model_version`` 不同仍是重放，
+    保留首次写入的版本。
     """
     if event.event_at.tzinfo is None or event.event_at.utcoffset() is None:
         raise ValueError("event_at must be timezone-aware")
