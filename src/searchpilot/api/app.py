@@ -5,7 +5,9 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from searchpilot.api import (
+    routes_agent,
     routes_ctr,
+    routes_experiments,
     routes_feedback,
     routes_health,
     routes_recommend,
@@ -18,5 +20,13 @@ from searchpilot.errors import register_exception_handlers
 def install_api(app: FastAPI) -> None:
     register_exception_handlers(app)
     app.add_middleware(RequestIdMiddleware)
-    for module in (routes_health, routes_search, routes_recommend, routes_feedback, routes_ctr):
+    for module in (
+        routes_health,
+        routes_search,
+        routes_recommend,
+        routes_feedback,
+        routes_ctr,
+        routes_experiments,
+        routes_agent,
+    ):
         app.include_router(module.router)
