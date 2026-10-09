@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "searchpilot"
+version = "0.1.0"
+description = "SearchPilot: an evaluable search and ad-ranking experiment platform"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic>=2",
+  "pydantic-settings>=2",
+  "psycopg[binary,pool]>=3.1",
+  "numpy",
+  "pandas",
+  "pyarrow",
+  "snowballstemmer",
+]
+
+[project.optional-dependencies]
+# 离线研究：评估交叉验证、CTR/校准、图表
+research = ["scikit-learn", "scipy", "matplotlib", "rank_bm25", "duckdb"]
+# 语义召回（V1 再装；体积大，不进默认安装）
+vector = ["torch", "sentence-transformers"]
+# Agent（V2）
+agent = ["httpx"]
+# 开发与质量
+dev = ["pytest", "pytest-asyncio", "httpx", "ruff", "mypy", "pandas-stubs"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+extend-exclude = ["data", "artifacts", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "W", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["searchpilot"]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+# 显式包基座：防止同名目录（如 src 外的 data/）被当作顶级包，导致
+# "Source file found twice under different module names" 之类的重复模块错误。
+explicit_package_bases = true
+packages = ["searchpilot"]
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 默认只跑单元测试；集成测试用 `python -m pytest -m integration` 显式运行，
+# 缺少 SEARCHPILOT_DATABASE_URL 时集成测试必须明确失败而不是静默跳过。
+addopts = "-m 'not integration' -q"
+markers = [
+  "integration: 需要 SEARCHPILOT_DATABASE_URL 指向可达的 PostgreSQL",
+]
+asyncio_mode = "auto"
