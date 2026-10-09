@@ -1,6 +1,101 @@
 query_id,query_text,query_type,split
-q_example_001,N12345 election update,exact_entity,train
-q_example_002,automobile market outlook,synonym,train
-q_example_003,Seattle weather weekend,multi_condition,val
-q_example_004,artifical inteligence news,misspelling_or_abbrev,test
-q_example_005,underwater city council on Mars,no_answer,test
+q_001,Abu Bakr al-Baghdadi,exact_entity,train
+q_002,Omer Yurtseven,exact_entity,train
+q_003,Buddy Hield,exact_entity,train
+q_004,Ricky Gervais,exact_entity,train
+q_005,Kincade Fire,exact_entity,val
+q_006,Bloodhound LSR,exact_entity,train
+q_007,Tropical Depression 17,exact_entity,train
+q_008,Recep Tayyip Erdogan,exact_entity,train
+q_009,Justin Trudeau,exact_entity,train
+q_010,Marie Yovanovitch,exact_entity,train
+q_011,Stellaris: Galaxy Command Halo 4 artwork,exact_entity,test
+q_012,Mick Mulvaney impeachment testimony,exact_entity,train
+q_013,Nicolas Cage The Unbearable Weight of Massive Talent,exact_entity,test
+q_014,Bernardine Evaristo Booker prize,exact_entity,train
+q_015,Eddie Lampert Sears lifeline,exact_entity,train
+q_016,Dhruv Gaur Final Jeopardy,exact_entity,train
+q_017,Brantley Morse Halloween costume,exact_entity,train
+q_018,Rocco Anastasio Deltona veterans documentary,exact_entity,test
+q_019,Karen Ambrose Francis Crick Institute,exact_entity,train
+q_020,André Aciman Call Me by Your Name follow-up,exact_entity,train
+q_021,Beijing urges Washington to scrap customs levies ahead of a commerce pact,synonym,train
+q_022,Beijing earns a global commerce body blessing to penalize Washington,synonym,train
+q_023,lethal trap reveals a government that no longer commands the region where narcotics traffickers slew half a dozen youngsters,synonym,train
+q_024,phone maker vows a massive sum for cheaper dwellings in the Golden State,synonym,train
+q_025,younger royal sibling admits friction with the elder one,synonym,test
+q_026,bullion finishes down while equities climb yet stays over fifteen hundred dollars,synonym,test
+q_027,weeklong mollusk harvest is about to start,synonym,train
+q_028,graduate candidate models a garment stitched from campus turndown notes,synonym,train
+q_029,pupil carrier smashes into an open-bed cargo vehicle,synonym,train
+q_030,playoff links favor spectacle over equity,synonym,test
+q_031,methods to help a plate cleaner work more effectively,synonym,train
+q_032,jogging a single session every seven nights may cut premature mortality,synonym,train
+q_033,Garden State localities outlaw disposable toting sacks,synonym,train
+q_034,avoid signing onto complimentary wireless inside a flight hub,synonym,val
+q_035,famous soda billboard in the city center is being removed for a flashy refresh,synonym,train
+q_036,web merchant's 24-hour parcel push is burning cash,synonym,train
+q_037,Wisconsin bus driver rescues a 2-year-old and a 6-year-old in the snow,multi_condition,train
+q_038,Jen Kiggans defeats Cheryl Turpin for Virginia's 7th District Senate,multi_condition,train
+q_039,Yoshiteru Ikegawa brings yakitori to New York,multi_condition,val
+q_040,Jim Thorpe Lehigh Gorge Scenic Railway shuts down over a tax dispute,multi_condition,train
+q_041,"Alabama dealer lists a used Toyota Supra for $167,000",multi_condition,train
+q_042,WesBanco of West Virginia buys Maryland's Old Line Bank,multi_condition,train
+q_043,Cleveland Browns versus Buffalo Bills at FirstEnergy Stadium,multi_condition,test
+q_044,American Airlines ends Baltimore-Phoenix flights,multi_condition,val
+q_045,Aaron Carter at the Grog Shop in Cleveland on December 3,multi_condition,train
+q_046,prayer vigil for a missing Clark Atlanta student,multi_condition,train
+q_047,Jalen Hurts leads Oklahoma over West Virginia 52-14,multi_condition,train
+q_048,Kona Poke opens a restaurant in Sanford,multi_condition,train
+q_049,Austin sewage overflow into Bull Creek kills fish,multi_condition,train
+q_050,country band Alabama plans a 2020 Indianapolis show after postponements,multi_condition,val
+q_051,Jennifer Lawrence and Cooke Maroney honeymoon in Indonesia,multi_condition,train
+q_052,Carly Simon deathbed farewell to Jackie Kennedy,multi_condition,val
+q_053,Chance the Rapper and Kirsten Bennett with baby Marli Grace,multi_condition,train
+q_054,Jenelle Evans splits from David Eason on Teen Mom,multi_condition,train
+q_055,Graham vows to hold POTUS accountable over the Syria drawdown,misspelling_or_abbrev,train
+q_056,USDA flags metal in recalled poultry,misspelling_or_abbrev,val
+q_057,I-80 pileup of dozens of vehicles in Mercer County,misspelling_or_abbrev,train
+q_058,Biz 40 shut down in Winston-Salem through Saturday night,misspelling_or_abbrev,val
+q_059,massive fire on the LA freeway,misspelling_or_abbrev,train
+q_060,GOP candidates sweep the Tamaqua school board election,misspelling_or_abbrev,test
+q_061,GVSU student senate removes the Pledge of Allegiance,misspelling_or_abbrev,val
+q_062,PG&E power lines may have started two Bay Area fires,misspelling_or_abbrev,train
+q_063,Elizabth Warren gains on Biden in the polls,misspelling_or_abbrev,train
+q_064,Boeing 737 Max groundng cost Southwest pilots $115M,misspelling_or_abbrev,train
+q_065,Popeyes chiken sandwich return date,misspelling_or_abbrev,train
+q_066,McKeesport boil watter advisory,misspelling_or_abbrev,train
+q_067,Christie Brinkle trains for DWTS at 65,misspelling_or_abbrev,train
+q_068,networks seek Felicty Huffman's post-prison interview,misspelling_or_abbrev,val
+q_069,Cristian Bale driving school in Chandler for Ford v Ferrari,misspelling_or_abbrev,test
+q_070,Thanksgivving takeout turkey in Houston,misspelling_or_abbrev,train
+q_071,telepathic squid chorus invents a plankton-ink barter token,no_answer,train
+q_072,crystal gargoyle coronation on Neptune's seventh satellite,no_answer,train
+q_073,sentient toaster guild walkout at a Jupiter foundry,no_answer,train
+q_074,invisible cogwheel withdrawal by the lunar sprocket guild,no_answer,train
+q_075,dragon molting schedule posted for the emerald caverns,no_answer,train
+q_076,unicorn farrier shortage in the floating meadows of Oz,no_answer,train
+q_077,robot pharaoh tomb unsealing delayed by blowing glass grit,no_answer,train
+q_078,mermaid charting exam for trenches below Rlyeh,no_answer,train
+q_079,time-shifted violin duel between ghosts in a pocket dimension,no_answer,train
+q_080,anti-gravity loom tribute demanded by vapor weavers of Cumulon,no_answer,val
+q_081,basilisk gazing parlor opens inside a mirrored labyrinth,no_answer,train
+q_082,ember-moth wing dyeing argued by cinder cooperatives,no_answer,train
+q_083,golem masonry curing times posted in a salt cathedral,no_answer,train
+q_084,kraken lullaby rehearsal moved after tentacle upkeep,no_answer,test
+q_085,elfin constellation-map naming quarrel inside a hollow comet,no_answer,val
+q_086,Mary Matthews death,long_tail_popular_distractor,test
+q_087,Hong Kong brick death,long_tail_popular_distractor,val
+q_088,Marion County flu death,long_tail_popular_distractor,train
+q_089,Half Moon Bay football,long_tail_popular_distractor,train
+q_090,Eaton Rapids Michigan snow,long_tail_popular_distractor,test
+q_091,Up There film Michigan Upper Peninsula,long_tail_popular_distractor,val
+q_092,Harrisburg Supreme Court gun donors,long_tail_popular_distractor,train
+q_093,Taste of Home Christmas Eve snacks,long_tail_popular_distractor,test
+q_094,Mary-Louise Parker Broadway,long_tail_popular_distractor,train
+q_095,Santa Fe ISD school bus cameras,long_tail_popular_distractor,train
+q_096,East Cobb Halloween police warning,long_tail_popular_distractor,train
+q_097,York Fair Ferris wheel accident,long_tail_popular_distractor,train
+q_098,Swedish royal family,long_tail_popular_distractor,test
+q_099,SpotCrime Seattle police crime trend,long_tail_popular_distractor,val
+q_100,Atlanta Peeping Tom peeking into windows,long_tail_popular_distractor,test
