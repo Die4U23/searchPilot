@@ -8,9 +8,10 @@ from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from searchpilot.api.app import install_api
+from searchpilot.api.auth import require_caller
 from searchpilot.config import Settings, get_settings
 from searchpilot.observability import configure_logging
 from searchpilot.ports import (
@@ -46,7 +47,12 @@ def create_app(
             except Exception:
                 logger.warning("shutdown hook failed", exc_info=True)
 
-    app = FastAPI(title="SearchPilot", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(
+        title="SearchPilot",
+        version="0.1.0",
+        lifespan=lifespan,
+        dependencies=[Depends(require_caller)],
+    )
     app.state.settings = get_settings()
     app.state.search = search
     app.state.recommend = recommend

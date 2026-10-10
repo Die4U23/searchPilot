@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SEARCHPILOT_", extra="ignore")
 
     database_url: str | None = None
+    api_token: str | None = None
     data_dir: Path = Path("./data")
     artifact_dir: Path = Path("./artifacts")
     data_version: str | None = None
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     db_pool_min: int = Field(default=1, ge=0)
     db_pool_max: int = Field(default=4, ge=1)
 
-    @field_validator("database_url", "data_version", mode="before")
+    @field_validator("database_url", "data_version", "api_token", mode="before")
     @classmethod
     def _blank_to_none(cls, value: object) -> object:
         """空字符串（如 compose 里未赋值的变量）视为未设置。"""
