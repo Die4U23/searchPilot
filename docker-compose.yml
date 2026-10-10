@@ -28,6 +28,7 @@ services:
       SEARCHPILOT_LOG_LEVEL: ${SEARCHPILOT_LOG_LEVEL:-INFO}
       SEARCHPILOT_DB_POOL_MIN: ${SEARCHPILOT_DB_POOL_MIN:-1}
       SEARCHPILOT_DB_POOL_MAX: ${SEARCHPILOT_DB_POOL_MAX:-4}
+      SEARCHPILOT_API_TOKEN: ${SEARCHPILOT_API_TOKEN:-}
     volumes:
       - ./data:/app/data:ro
       - ./artifacts:/app/artifacts:ro
@@ -42,7 +43,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
 volumes:
   pgdata:

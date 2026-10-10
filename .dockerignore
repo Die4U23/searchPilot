@@ -1,0 +1,14 @@
+.git
+.venv
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.tmp
+.env
+data/raw
+data/processed
+artifacts
+third_party
+**/__pycache__
+**/*.pyc
+**/*.pyo
