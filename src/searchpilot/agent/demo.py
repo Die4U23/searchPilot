@@ -51,14 +51,14 @@ def demo_store() -> InMemoryExperimentStore:
         ExperimentRecord(
             experiment_id="sp-ctr",
             kind="ctr",
-            config={"seed": 20261009, "model_version": "ctr-cf4a1955"},
+            config={"seed": 20261009, "model_version": "ctr-bb0917dc"},
             data_version="d3a904f41240",
             protocol_version=PROTOCOL,
             source="searchpilot",
             source_ref={"repo": "searchPilot", "path": "docs/data/ctr-report.md"},
             metrics=(
-                _metric("auc", 0.5330, "searchpilot"),
-                _metric("ece", 0.0155, "searchpilot"),
+                _metric("auc", 0.4535, "searchpilot"),
+                _metric("ece", 0.0063, "searchpilot"),
             ),
         )
     )
