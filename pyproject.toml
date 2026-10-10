@@ -19,6 +19,7 @@ dependencies = [
   "pandas",
   "pyarrow",
   "snowballstemmer",
+  "python-dotenv",
 ]
 
 [project.optional-dependencies]

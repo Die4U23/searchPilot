@@ -67,9 +67,7 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 ### Docker
 
-```bash
-docker compose up --build   # api + postgres:16，API 监听 8000
-```
+`docker compose up --build` 会先跑数据库迁移，再启动 API。物品导入仍需在容器外执行 `scripts/seed_items.py`。
 
 配置全部来自环境变量，见 [`.env.example`](.env.example)（前缀 `SEARCHPILOT_`）。
 
@@ -121,14 +119,14 @@ docs/dev/           并行开发契约（build-plan.md）
 | RRF `hybrid-51d4dcfb` | 0.7214 | 0.7679 | 1.0000 |
 | LTR `ltr-4574f8f4` | 0.4596 | 0.4595 | 0.7175 |
 
-LTR 低于 RRF，这是保留的负结果。CTR 抽样 test 上 LR AUC 0.5330，MLP 温度缩放后 ECE 0.0155，AUC 仍为 0.4886。合成出价 eCPM 的 Top-1 一致率 0.8998，不是真实广告收入。
+LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 和向量分各自缩放到 0–1 再平均）在同一 test 集上 nDCG@10 为 0.7710、MRR@10 为 0.7857、Recall@50 为 1.0000，见 `docs/data/normalized-fusion.md`。它不是默认融合。CTR 抽样 test 上 LR AUC 0.5330，MLP 温度缩放后 ECE 0.0155，AUC 仍为 0.4886。合成出价 eCPM 的 Top-1 一致率 0.8998，不是真实广告收入。
 
 ## 已知限制
 
 - 本机没有 PostgreSQL 密码时，实验登记用 `artifacts/experiments/registry.json`，不写数据库。
 - 查询标注不是人工双标。
 - 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
-- 向量、重排、CTR 的分阶段压测是 UNRUN。BM25 进程内 100 次顺序请求（Windows 11，Python 3.12.6，无 `--reload`）：p50 2.827 ms，p95 5.065 ms，p99 5.801 ms，约 315 req/s。详见 `docs/data/bench.md`。
+- 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
 - `docker compose up` 不会自动迁移或导入物品。
 - 没有真实的 EvoRec 结果文件时，导入器用本地夹具。跨来源比较返回不可比。
 
