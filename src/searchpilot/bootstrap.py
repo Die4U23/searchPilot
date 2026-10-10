@@ -126,15 +126,21 @@ def build_default_app() -> FastAPI:
             "in-memory feedback store",
             lambda: _attr("searchpilot.feedback.memory", "InMemoryFeedbackStore")(),
         )
-    # 登记文件不存在则是空登记，不因此启动失败。有数据库时也先用这份文件，
-    # 避免只配了连接串就把实验查询打成 503。
+    # 有连接池时写入 PostgreSQL；否则读本地登记文件。文件不存在则是空登记。
     registry = settings.artifact_dir / "experiments" / "registry.json"
 
     def load_registry() -> object:
         store_cls = _attr("searchpilot.experiments.store", "InMemoryExperimentStore")
         return store_cls.load(registry)
 
-    experiments = _load("experiment registry", load_registry)
+    def load_postgres_experiments() -> object:
+        store_cls = _attr("searchpilot.db.experiment_store", "PostgresExperimentStore")
+        return store_cls(pool)
+
+    if pool is not None:
+        experiments = _load("postgres experiments", load_postgres_experiments)
+    else:
+        experiments = _load("experiment registry", load_registry)
 
     ctr = _load(
         "ctr runtime",

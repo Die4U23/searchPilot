@@ -6,6 +6,7 @@ import argparse
 from collections.abc import Sequence
 
 import uvicorn
+from dotenv import load_dotenv
 
 from searchpilot.config import get_settings
 from searchpilot.observability import configure_logging
@@ -20,6 +21,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
+    load_dotenv()
     configure_logging(get_settings().log_level)
     # factory 模式：每个进程启动时调用 build_default_app()；访问日志由应用中间件输出。
     # 不启用 --reload：压测与生产都应关闭热重载。
