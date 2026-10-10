@@ -5,6 +5,36 @@
 
 > 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注不是人工双标；外部语言模型上的 Agent 评测未跑。
 
+## 架构
+
+```text
+MIND Small                         本地 EvoRec 夹具（不是上游仓库的一次真实运行）
+    |                                          |
+    v                                          v
+清洗 / 时间切分 / 查询标注 ---------> PostgreSQL（物品、反馈、实验、指标）
+    |
+    +--> BM25 倒排
+    +--> bge-small 向量（精确余弦）
+    +--> pairwise LTR
+    +--> CTR（LR / MLP）+ 验证集上的温度缩放
+    |
+    v
+FastAPI：/search  /recommend  /feedback  /ctr/score
+         /experiments/{id}  /agent/analyze  /health/*
+    |
+只读 Agent：六个窄工具，引用带 source
+```
+
+没有数据库时，反馈在内存里，实验登记读 `artifacts/experiments/registry.json`。
+
+## 数据
+
+MIND Small，研究用途，原始文件不进 Git。下载脚本核对 SHA-256。`data_version` `d3a904f41240`：物品 65238，曝光 8584442，用户历史 50000。train 为 2019-11-09 至 2019-11-14，dev 为 2019-11-15。
+
+查询集 100 条，种子 `20261009`，按查询切成 70 / 15 / 15，六类都有样本。双标 20 条、206 对：完全一致 0.9272，相邻一致 1.0，二次加权 kappa 0.9702。标注员是两个模型会话，不是人工。详见 `docs/data/annotation-report.md`。
+
+仓库里没有真实的 EvoRec 结果文件。`evorec-itemcf` 是本地夹具，用来检查跨来源比较会被拒绝。
+
 ## 快速开始
 
 需要 Python 3.12。
@@ -84,7 +114,7 @@ src/searchpilot/
   errors.py         统一错误信封与异常处理器
   contracts.py      请求/响应 Pydantic 模型
   bootstrap.py      create_app / build_default_app
-  api/              中间件与路由（health、search、recommend、feedback）
+  api/              中间件与路由（health、search、recommend、feedback、ctr、experiments、agent）
   search/           BM25、RRF、搜索服务与评估
   recommend/        热门 / ItemCF 回退推荐
   feedback/         反馈幂等写入（内存实现）
@@ -111,7 +141,30 @@ docs/dev/           并行开发契约（build-plan.md）
 `{"error": {"code", "message", "retryable", "request_id"}}`。字段、限制与错误码的完整定义见
 [docs/dev/build-plan.md](docs/dev/build-plan.md) 第 4 节。
 
-## 已测结果（2026-10-09）
+空查询：
+
+```http
+POST /search
+{"query": ""}
+```
+
+```json
+{"error": {"code": "INVALID_INPUT", "message": "body.query: String should have at least 1 character", "retryable": false, "request_id": "req_..."}}
+```
+
+有结果的搜索（本机 BM25，`microsoft`，`limit=1`）：
+
+```json
+{"request_id": "req_...", "normalized_query": "microsoft", "model_version": "bm25-4f46b3d8", "mode": "bm25", "results": [{"item_id": "N58995", "score": 24.661796673688574, "rank": 1, "channel": "bm25"}]}
+```
+
+模型未加载时对应接口返回 503 `NOT_READY`。
+
+## Agent
+
+`scripts/evaluate_agent.py` 跑 50 条固定任务。当前分析器是确定性的，不调用外部语言模型。工具都在白名单内 50/50，需要引用的任务 27/27 能对上工具返回，跨来源陷阱 8/8 拒绝比较优劣。外部语言模型评测是 UNRUN。详见 `docs/data/agent-report.md`。
+
+## 已测结果（搜索 2026-10-09，CTR 2026-10-10）
 
 同一套 15 条 test 查询，数据版本 `d3a904f41240`。标注由两个模型会话完成，不是人工双标，不能当作 PRD 要求的人工验收结论。
 
@@ -122,7 +175,7 @@ docs/dev/           并行开发契约（build-plan.md）
 | RRF `hybrid-51d4dcfb` | 0.7214 | 0.7679 | 1.0000 |
 | LTR `ltr-4574f8f4` | 0.4596 | 0.4595 | 0.7175 |
 
-LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 和向量分各自缩放到 0–1 再平均）在同一 test 集上 nDCG@10 为 0.7710、MRR@10 为 0.7857、Recall@50 为 1.0000，见 `docs/data/normalized-fusion.md`。它不是默认融合。CTR 抽样 test 上 LR AUC 0.5330，MLP 温度缩放后 ECE 0.0155，AUC 仍为 0.4886。合成出价 eCPM 的 Top-1 一致率 0.8998，不是真实广告收入。
+LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 和向量分各自缩放到 0–1 再平均）在同一 test 集上 nDCG@10 为 0.7710、MRR@10 为 0.7857、Recall@50 为 1.0000，见 `docs/data/normalized-fusion.md`。它不是默认融合。CTR 抽样 test 上 LR AUC 0.4535，MLP 温度缩放后 ECE 0.0063，AUC 仍为 0.4836。同一 test 上 Platt ECE 0.0019、等渗回归 ECE 0.0014，都不是线上默认。合成出价 eCPM 的 Top-1 一致率 0.9180，不是真实广告收入。
 
 ## 已知限制
 
