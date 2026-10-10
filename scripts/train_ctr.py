@@ -16,7 +16,14 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-from searchpilot.ctr.calibrate import apply_temperature, fit_isotonic, fit_platt, fit_temperature
+from searchpilot.ctr.calibrate import (
+    apply_isotonic,
+    apply_platt,
+    apply_temperature,
+    fit_isotonic,
+    fit_platt,
+    fit_temperature,
+)
 from searchpilot.ctr.features import (
     FEATURE_NAMES,
     apply_standardizer,
@@ -69,19 +76,37 @@ def _metrics_block(name: str, labels: np.ndarray, probabilities: np.ndarray) -> 
     }
 
 
-def _group_ece(
-    labels: np.ndarray, probabilities: np.ndarray, history: np.ndarray
-) -> dict[str, float]:
-    cold = history <= 0
-    warm = ~cold
-    result = {}
-    for key, mask in (("history_len_0", cold), ("history_len_gt_0", warm)):
-        if int(mask.sum()) == 0:
-            result[key] = 0.0
-            continue
-        ece, _curve = expected_calibration_error(labels[mask], probabilities[mask])
-        result[key] = ece
-    return result
+def _slice_metrics(
+    labels: np.ndarray, probabilities: np.ndarray, mask: np.ndarray
+) -> dict[str, object]:
+    count = int(mask.sum())
+    if count == 0:
+        return {"n": 0, "auc": None, "log_loss": None, "ece": None}
+    y = labels[mask]
+    p = probabilities[mask]
+    ece, _curve = expected_calibration_error(y, p)
+    return {
+        "n": count,
+        "auc": binary_auc(y, p),
+        "log_loss": binary_log_loss(y, p),
+        "ece": ece,
+    }
+
+
+def _group_metrics(
+    labels: np.ndarray,
+    probabilities: np.ndarray,
+    history: np.ndarray,
+    popularity: np.ndarray,
+) -> dict[str, dict[str, object]]:
+    """历史长度与 train 期物品点击分桶。分桶只用训练期计数。"""
+    masks = {
+        "history_len_0": history <= 0,
+        "history_len_gt_0": history > 0,
+        "item_clicks_0": popularity <= 0,
+        "item_clicks_gt_0": popularity > 0,
+    }
+    return {key: _slice_metrics(labels, probabilities, mask) for key, mask in masks.items()}
 
 
 def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
@@ -126,8 +151,12 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
     val_rows = _sample_split(dev.iloc[:mid], VAL_N, rng)
     test_rows = _sample_split(dev.iloc[mid:], TEST_N, rng)
 
-    def matrix_of(frame: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        pairs = list(zip(frame["user_id"].astype(str), frame["item_id"].astype(str), strict=True))
+    def matrix_of(
+        frame: pd.DataFrame,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        users = frame["user_id"].astype(str)
+        item_ids = frame["item_id"].astype(str)
+        pairs = list(zip(users, item_ids, strict=True))
         raw = rows_to_matrix(
             pairs,
             user_history_len=user_history_len,
@@ -136,12 +165,13 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
             item_category=item_category,
             item_title_chars=item_title_chars,
         )
-        history_len = np.array([user_history_len.get(user, 0) for user, _item in pairs])
-        return raw, frame["clicked"].to_numpy(dtype=np.int64), history_len
+        history_len = np.array([user_history_len.get(user, 0) for user in users], dtype=np.int64)
+        popularity = np.array([int(item_clicks.get(item, 0)) for item in item_ids], dtype=np.int64)
+        return raw, frame["clicked"].to_numpy(dtype=np.int64), history_len, popularity
 
-    x_train, y_train, _h_train = matrix_of(train_rows)
-    x_val, y_val, h_val = matrix_of(val_rows)
-    x_test, y_test, h_test = matrix_of(test_rows)
+    x_train, y_train, _h_train, _p_train = matrix_of(train_rows)
+    x_val, y_val, _h_val, _p_val = matrix_of(val_rows)
+    x_test, y_test, h_test, p_test = matrix_of(test_rows)
     mean, std = fit_standardizer(x_train)
     train_x = apply_standardizer(x_train, mean, std)
     val_x = apply_standardizer(x_val, mean, std)
@@ -161,6 +191,8 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
     iso_x, iso_y = fit_isotonic(1.0 / (1.0 + np.exp(-np.clip(val_logits, -60, 60))), y_val)
     raw_test = 1.0 / (1.0 + np.exp(-np.clip(test_logits, -60, 60)))
     cal_test = apply_temperature(test_logits, temperature)
+    platt_test = apply_platt(test_logits, platt_coef, platt_intercept)
+    iso_test = apply_isotonic(raw_test, iso_x, iso_y)
     lr_prob = 1.0 / (1.0 + np.exp(-np.clip(lr_test, -60, 60)))
 
     version_payload = {
@@ -226,6 +258,8 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
 
     raw_block = _metrics_block("mlp_raw", y_test, raw_test)
     cal_block = _metrics_block("mlp_temperature", y_test, cal_test)
+    platt_block = _metrics_block("mlp_platt", y_test, platt_test)
+    iso_block = _metrics_block("mlp_isotonic", y_test, iso_test)
     lr_block = _metrics_block("lr", y_test, lr_prob)
     report = {
         "model_version": model_version,
@@ -239,8 +273,15 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
         "lr": lr_block,
         "mlp_raw": raw_block,
         "mlp_temperature": cal_block,
-        "grouped_ece_raw": _group_ece(y_test, raw_test, h_test),
-        "grouped_ece_calibrated": _group_ece(y_test, cal_test, h_test),
+        "mlp_platt": platt_block,
+        "mlp_isotonic": iso_block,
+        "grouped_temperature": _group_metrics(y_test, cal_test, h_test, p_test),
+        "grouped_ece": {
+            "raw": _group_metrics(y_test, raw_test, h_test, p_test),
+            "temperature": _group_metrics(y_test, cal_test, h_test, p_test),
+            "platt": _group_metrics(y_test, platt_test, h_test, p_test),
+            "isotonic": _group_metrics(y_test, iso_test, h_test, p_test),
+        },
     }
     _json(out / "metrics.json", report)
     return report
@@ -252,13 +293,63 @@ def _fmt(value: object) -> str:
     return f"{float(value):.4f}"
 
 
+_GROUP_TITLES = (
+    ("history_len_0", "历史长度 0"),
+    ("history_len_gt_0", "历史长度 > 0"),
+    ("item_clicks_0", "train 点击 0"),
+    ("item_clicks_gt_0", "train 点击 > 0"),
+)
+
+
+def _group_lines(groups: object) -> list[str]:
+    assert isinstance(groups, dict)
+    lines = [
+        "| 分组 | n | AUC | LogLoss | ECE |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for key, title in _GROUP_TITLES:
+        block = groups[key]
+        assert isinstance(block, dict)
+        lines.append(
+            f"| {title} | {int(block['n'])} | {_fmt(block['auc'])} | "
+            f"{_fmt(block['log_loss'])} | {_fmt(block['ece'])} |"
+        )
+    return lines
+
+
+def _calibrator_ece_lines(groups: object) -> list[str]:
+    assert isinstance(groups, dict)
+    lines = [
+        "| 分组 | n | raw | temperature | Platt | isotonic |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for key, title in _GROUP_TITLES:
+        cells = []
+        count = None
+        for name in ("raw", "temperature", "platt", "isotonic"):
+            block = groups[name][key]
+            assert isinstance(block, dict)
+            count = int(block["n"])
+            cells.append(_fmt(block["ece"]))
+        lines.append(f"| {title} | {count} | {' | '.join(cells)} |")
+    return lines
+
+
 def write_report(report: dict[str, object], path: Path) -> None:
     rows = report["rows"]
     assert isinstance(rows, dict)
     lr = report["lr"]
     raw = report["mlp_raw"]
     cal = report["mlp_temperature"]
-    assert isinstance(lr, dict) and isinstance(raw, dict) and isinstance(cal, dict)
+    platt = report["mlp_platt"]
+    isotonic = report["mlp_isotonic"]
+    assert (
+        isinstance(lr, dict)
+        and isinstance(raw, dict)
+        and isinstance(cal, dict)
+        and isinstance(platt, dict)
+        and isinstance(isotonic, dict)
+    )
     lines = [
         "# CTR 训练与校准",
         "",
@@ -267,6 +358,7 @@ def write_report(report: dict[str, object], path: Path) -> None:
         "dev 按 `shown_at` 中位数切开，前一半是 val，后一半是 test。校准器只在 val 上拟合。",
         "物品点击只统计 train 且 clicked=1。用户历史来自 `user_history.parquet`。",
         "没有位置特征，CTR 受位置偏差影响，这是已知限制。",
+        "线上默认校准器仍是温度缩放。Platt 与等渗回归只在这份对照里出现。",
         "",
         f"- model_version: `{report['model_version']}`",
         f"- calibrator_version: `{report['calibrator_version']}`",
@@ -277,11 +369,17 @@ def write_report(report: dict[str, object], path: Path) -> None:
         f"| LR | {_fmt(lr['auc'])} | {_fmt(lr['log_loss'])} | {_fmt(lr['ece'])} |",
         f"| MLP raw | {_fmt(raw['auc'])} | {_fmt(raw['log_loss'])} | {_fmt(raw['ece'])} |",
         f"| MLP temperature | {_fmt(cal['auc'])} | {_fmt(cal['log_loss'])} | {_fmt(cal['ece'])} |",
+        f"| MLP Platt | {_fmt(platt['auc'])} | {_fmt(platt['log_loss'])} | {_fmt(platt['ece'])} |",
+        "| MLP isotonic | "
+        f"{_fmt(isotonic['auc'])} | {_fmt(isotonic['log_loss'])} | {_fmt(isotonic['ece'])} |",
         "",
-        "## 分组 ECE（MLP）",
+        "## 分组指标（温度缩放，test）",
         "",
-        f"- 校准前：`{report['grouped_ece_raw']}`",
-        f"- 温度缩放后：`{report['grouped_ece_calibrated']}`",
+        *_group_lines(report["grouped_temperature"]),
+        "",
+        "## 分组 ECE（三种校准器，test）",
+        "",
+        *_calibrator_ece_lines(report["grouped_ece"]),
         "",
         "## 校准曲线（温度缩放，test）",
         "",
