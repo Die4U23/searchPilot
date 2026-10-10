@@ -46,6 +46,14 @@ class MlpWeights:
     b2: list[float]
 
 
+def _reset_parameters(model: nn.Module) -> None:
+    """在 ``manual_seed`` 之后重设参数，避免构造时机抢走种子。"""
+    for module in model.modules():
+        reset = getattr(module, "reset_parameters", None)
+        if callable(reset):
+            reset()
+
+
 def train_binary(
     model: nn.Module,
     features: np.ndarray,
@@ -56,6 +64,7 @@ def train_binary(
     seed: int = SEED,
 ) -> nn.Module:
     torch.manual_seed(seed)
+    _reset_parameters(model)
     x = torch.tensor(np.asarray(features, dtype=np.float32))
     y = torch.tensor(np.asarray(labels, dtype=np.float32))
     opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
