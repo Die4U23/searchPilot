@@ -1,6 +1,6 @@
-"""把查询、模型标注、Agent 任务、模型版本和合成出价写入 PostgreSQL。
+"""把查询、标注、Agent 任务、模型版本和合成出价写入 PostgreSQL。
 
-标注员字段原样保存。模型会话打的分不能当作人工验收。
+标注员字段原样保存。`annotator` 可以是人或外部工具的名字。
 """
 
 from __future__ import annotations
