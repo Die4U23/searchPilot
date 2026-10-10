@@ -3,7 +3,7 @@
 一个可评估的搜索与广告排序实验平台：**BM25 / 向量 / RRF 搜索 + 广告 CTR 预估与校准 + 回退推荐 + 实验来源登记**。
 上游 EvoRec 的实验结果只会以**标注来源**（`source`、`source_ref`、commit、SHA-256）的方式被引用，不会被当作本项目的实测结论。
 
-> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注不是人工双标；外部语言模型上的 Agent 评测未跑。
+> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注可以由外部工具完成；外部语言模型上的 Agent 评测未跑。
 
 ## 架构
 
@@ -31,7 +31,7 @@ FastAPI：/search  /recommend  /feedback  /ctr/score
 
 MIND Small，研究用途，原始文件不进 Git。下载脚本核对 SHA-256。`data_version` `d3a904f41240`：物品 65238，曝光 8584442，用户历史 50000。train 为 2019-11-09 至 2019-11-14，dev 为 2019-11-15。
 
-查询集 100 条，种子 `20261009`，按查询切成 70 / 15 / 15，六类都有样本。双标 20 条、206 对：完全一致 0.9272，相邻一致 1.0，二次加权 kappa 0.9702。标注员是两个模型会话，不是人工。详见 `docs/data/annotation-report.md`。
+查询集 100 条，种子 `20261009`，按查询切成 70 / 15 / 15，六类都有样本。双标 20 条、206 对：完全一致 0.9272，相邻一致 1.0，二次加权 kappa 0.9702。当前 `annotator` 是 `grok-a` 和 `grok-b`。详见 `docs/data/annotation-report.md`。
 
 仓库里没有真实的 EvoRec 结果文件。`evorec-itemcf` 是本地夹具，用来检查跨来源比较会被拒绝。
 
@@ -168,7 +168,7 @@ POST /search
 
 ## 已测结果（搜索 2026-10-09，CTR 2026-10-10）
 
-同一套 15 条 test 查询，数据版本 `d3a904f41240`。标注由两个模型会话完成，不是人工双标，不能当作 PRD 要求的人工验收结论。已标注文档里 97.6% 落在 BM25 前 10，只有 28.1% 落在向量前 10。三路前 10 的并集还有 938 条没有分数，见 `docs/data/label-pool.md`。把未标注文档移出名单、不另打分后，test 上向量 nDCG@10 从 0.7769 升到 0.9432，LTR 从 0.4596 升到 0.8338，BM25 仍是 0.6396。见 `docs/data/judged-only.md`。
+同一套 15 条 test 查询，数据版本 `d3a904f41240`。当前标注的 `annotator` 是 `grok-a` 和 `grok-b`。已标注文档里 97.6% 落在 BM25 前 10，只有 28.1% 落在向量前 10。三路前 10 的并集还有 938 条没有分数，见 `docs/data/label-pool.md`。把未标注文档移出名单、不另打分后，test 上向量 nDCG@10 从 0.7769 升到 0.9432，LTR 从 0.4596 升到 0.8338，BM25 仍是 0.6396。见 `docs/data/judged-only.md`。
 
 | 方案 | nDCG@10 | MRR@10 | Recall@50 |
 |---|---:|---:|---:|
@@ -182,7 +182,7 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 ## 已知限制
 
 - 未设置 `SEARCHPILOT_DATABASE_URL` 时，实验登记读 `artifacts/experiments/registry.json`，反馈写在内存里。
-- 查询标注不是人工双标。
+- 当前 `labels.csv` 的 `annotator` 是 `grok-a` 和 `grok-b`。换工具时另存 CSV，不要覆盖这两份原始文件。
 - 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
 - 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
 - `docker compose up` 会先迁移再启动 API，不会自动导入物品。

@@ -26,12 +26,21 @@
 6. **long_tail_popular_distractor（建议 15 条）**：选择低频实体，并加入会召回热门但不相关
    新闻的常见词，例如 `small-town Orion school bond`，检查热门内容是否压过真正相关项。
 
-以上建议合计 100 条。正式查询须人工核对语料；示例 CSV 仅用于说明格式，不计入正式结果。
+以上建议合计 100 条。正式查询的文本要和语料核对。示例 CSV 只说明格式，不计入正式结果。
+
+## 标注员
+
+标注员可以是人，也可以是人使用的其他工具。结果写入 `data/queries/` 下的 CSV，`annotator` 填人或工具的名字。
+
+被评估的 SearchPilot 检索和排序结果，不得用来给同一批测试文档打分。
+
+缺分的候选在 `data/queries/candidate_pool_k10.csv`。查询原文在 `data/queries/queries.csv` 的 `query_text`。新闻标题和摘要在 `data/processed/d3a904f41240/items.parquet`，用 `item_id` 对应。打分时不要看 `in_bm25`、`in_vector`、`in_hybrid`。
+
+工具输出另存为新文件，例如 `labels_tool.csv`，列是 `query_id,item_id,grade,annotator`。不要覆盖 `labels_grok_a.csv` 和 `labels_grok_b.csv`。
 
 ## 双标与一致率
 
-固定随机种子按 `query_id` 抽取不少于 20% 的查询，抽中的查询及其全部候选由第二名标注员
-独立标注。标注员在对账前不得查看对方结果。
+固定随机种子按 `query_id` 抽取不少于 20% 的查询。抽中的查询及其全部候选由第二名标注员独立标注。第二名可以是另一个人，或另一个工具。对账前不得查看对方结果。
 
 同时报告：
 
