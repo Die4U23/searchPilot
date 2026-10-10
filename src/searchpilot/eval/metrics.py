@@ -32,6 +32,11 @@ def relevant_items(grades: Mapping[str, int]) -> set[str]:
     return {item for item, g in grades.items() if g >= RELEVANT_MIN_GRADE}
 
 
+def judged_ranking(ranked: Sequence[str], grades: Mapping[str, int]) -> list[str]:
+    """丢掉没有标注的文档，保留已标注文档的相对顺序。不给未标注文档打分。"""
+    return [item_id for item_id in ranked if item_id in grades]
+
+
 def dcg_at_k(ranked: Sequence[str], grades: Mapping[str, int], k: int) -> float:
     """``Σ_{i=1..k} gain(grade_i) / log2(i + 1)``；``ranked`` 短于 ``k`` 时只累加实际存在的名次。"""
     if k <= 0:
