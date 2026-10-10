@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from searchpilot.ctr.features import feature_vector, fit_standardizer
-from searchpilot.ctr.metrics import binary_auc, expected_calibration_error
+from searchpilot.ctr.metrics import binary_auc, expected_calibration_error, univariate_separation
 from searchpilot.ctr.model import LogisticModel, predict_logits, train_binary
 
 
@@ -25,6 +25,14 @@ def test_ece_is_zero_when_probabilities_match_labels() -> None:
 
 def test_auc_none_for_one_class() -> None:
     assert binary_auc([0, 0, 0], [0.2, 0.3, 0.4]) is None
+
+
+def test_univariate_separation_reports_reversed_feature() -> None:
+    stats = univariate_separation([0, 0, 1, 1], [3.0, 2.0, 0.0, 1.0])
+    assert stats["auc"] is not None
+    assert stats["auc"] < 0.5
+    assert stats["click_rate_when_zero"] == 1.0
+    assert stats["n_feature_zero"] == 1
 
 
 def test_train_binary_repeats_with_the_same_seed() -> None:
