@@ -14,7 +14,7 @@ import json
 import sys
 from pathlib import Path
 
-from searchpilot.experiments.import_evorec import import_evorec_result
+from searchpilot.experiments.import_evorec import import_evorec_file
 from searchpilot.experiments.store import InMemoryExperimentStore
 
 
@@ -31,6 +31,12 @@ def main(argv: list[str] | None = None) -> int:
         help="reject import when the file digest differs",
     )
     parser.add_argument(
+        "--source-path",
+        default=None,
+        dest="source_path",
+        help="path recorded in source_ref; defaults to the local file path",
+    )
+    parser.add_argument(
         "--registry",
         type=Path,
         default=None,
@@ -44,13 +50,14 @@ def main(argv: list[str] | None = None) -> int:
         else InMemoryExperimentStore()
     )
     try:
-        record = import_evorec_result(
+        records = import_evorec_file(
             args.path,
             store,
             repo=args.repo,
             commit=args.commit,
             run_id=args.run_id,
             expect_sha256=args.expect_sha256,
+            source_path=args.source_path,
         )
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -58,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.registry is not None:
         store.save(args.registry)
-    print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
+    print(json.dumps([record.to_dict() for record in records], ensure_ascii=False, indent=2))
     return 0
 
 
