@@ -186,8 +186,18 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 - 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
 - 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
 - `docker compose up` 会先迁移再启动 API，不会自动导入物品。
-- 没有真实的 EvoRec 结果文件时，导入器用本地夹具。跨来源比较返回不可比。
+- Agent 固定任务里的 `evorec-itemcf` 仍是本地夹具。真实结果在下面的来源表里，协议不同，不能和本项目的 nDCG 放在一张提升表里。
 
 ## 与 EvoRec 的边界
 
-SearchPilot 自己负责搜索、回退推荐与线上服务；EvoRec 的数据、指标与实验只读导入并带来源标注，跨来源数值不直接比较。
+SearchPilot 自己负责搜索、回退推荐与线上服务。EvoRec 公开仓库是 [Die4U23/EvoRec](https://github.com/Die4U23/EvoRec)，MIT 许可。下面五份 `results.json` 固定在 commit `5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5`，指标名和数值原样导入，`source=evorec`。
+
+| 路径 | SHA-256 |
+|---|---|
+| `docs/experiments/r03-content/results.json` | `8b975411c905429cc1e54d2ad81c0619c109d75db17f2333b1a43d734c9de3ac` |
+| `docs/experiments/r04-gating/results.json` | `6c6fe2132a1cd9aac943a1a939b0aaff9859dcc3da0fd1196340cb0255039e84` |
+| `docs/experiments/r05-cold-replication/results.json` | `8fe0efb6fe33fa1adc4e0493f85c72b65b4167ea705304414adcea38008debea` |
+| `docs/experiments/r05-ranker/results.json` | `185286a00c86de52e9853be4219148bf4b9e0ab0e141a1b64c52a44077d889c8` |
+| `docs/experiments/r06-multi-interest/results.json` | `a56097096c38317b7b5bdf9bff96a0cccaa386b6114b1e53211d2ed886f04774` |
+
+这些是 EvoRec 自己的视频游戏推荐协议。例如 r05-ranker 的 RRF 在 `all_positive_events` 上 nDCG@10 为 0.006536741003757799（来源：EvoRec `r05-ranker`，commit `5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5`）。它不能与本项目 MIND 搜索的 nDCG 比较。

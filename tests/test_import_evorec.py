@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from searchpilot.experiments.import_evorec import import_evorec_result
+from searchpilot.experiments.import_evorec import import_evorec_file, import_evorec_result
 from searchpilot.experiments.store import (
     ExperimentRecord,
     InMemoryExperimentStore,
@@ -101,3 +101,50 @@ def test_imported_evorec_is_not_comparable_to_searchpilot(tmp_path: Path) -> Non
     result = compare_experiments(local, imported, ["ndcg@10"])
     assert result["comparable"] is False
     assert result["reason"] == "source or protocol_version differs"
+
+
+def test_published_results_keep_cohort_metric_names(tmp_path: Path) -> None:
+    path = tmp_path / "results.json"
+    path.write_text(
+        json.dumps(
+            {
+                "protocol_id": "2624e6561e71af4b",
+                "protocol": {"catalog_sha256": "catalogsha"},
+                "configuration": {"stage": "R05-ranker"},
+                "test_results": [
+                    {
+                        "name": "RRF",
+                        "metrics": {
+                            "cohorts": {
+                                "cold_user": {
+                                    "ndcg@10": 0.2,
+                                    "recall@20": 0.1,
+                                    "ranking_latency_ms_p50": None,
+                                }
+                            }
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    store = InMemoryExperimentStore()
+    records = import_evorec_file(
+        path,
+        store,
+        repo="Die4U23/EvoRec",
+        commit="5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5",
+        run_id="r05-ranker",
+        source_path="docs/experiments/r05-ranker/results.json",
+    )
+    assert [record.experiment_id for record in records] == ["r05-ranker-rrf"]
+    loaded = store.get("r05-ranker-rrf")
+    assert loaded is not None
+    assert loaded.protocol_version == "2624e6561e71af4b"
+    assert loaded.source_ref is not None
+    assert loaded.source_ref["path"] == "docs/experiments/r05-ranker/results.json"
+    assert {(metric.name, metric.segment, metric.value) for metric in loaded.metrics} == {
+        ("ndcg@10", "cold_user", 0.2),
+        ("recall@20", "cold_user", 0.1),
+    }

@@ -44,3 +44,6 @@ artifacts/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# EvoRec 固定 commit 的结果快照（scripts/fetch_evorec_results.py 按 README 来源表拉取）
+third_party/
