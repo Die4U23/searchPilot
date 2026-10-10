@@ -201,3 +201,6 @@ SearchPilot 自己负责搜索、回退推荐与线上服务。EvoRec 公开仓�
 | `docs/experiments/r06-multi-interest/results.json` | `a56097096c38317b7b5bdf9bff96a0cccaa386b6114b1e53211d2ed886f04774` |
 
 这些是 EvoRec 自己的视频游戏推荐协议。例如 r05-ranker 的 RRF 在 `all_positive_events` 上 nDCG@10 为 0.006536741003757799（来源：EvoRec `r05-ranker`，commit `5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5`）。它不能与本项目 MIND 搜索的 nDCG 比较。
+
+设置 `SEARCHPILOT_API_TOKEN` 后，除 `GET /health/live` 外请求都要带 `Authorization: Bearer <token>`。`POST /feedback` 还要带 `X-Actor`，并且与 `user_id` 相同。未设置令牌时行为与以前一样。
+
