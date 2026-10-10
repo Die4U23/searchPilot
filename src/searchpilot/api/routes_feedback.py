@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
+from searchpilot.api.auth import require_feedback_owner
 from searchpilot.api.deps import FeedbackDep, ItemsDep
 from searchpilot.contracts import ErrorResponse, FeedbackRequest, FeedbackResponse
 from searchpilot.errors import ITEM_NOT_FOUND, NOT_READY, ApiError
@@ -24,9 +25,12 @@ router = APIRouter(tags=["feedback"])
         503: {"model": ErrorResponse},
     },
 )
-def feedback(body: FeedbackRequest, store: FeedbackDep, items: ItemsDep) -> FeedbackResponse:
+def feedback(
+    body: FeedbackRequest, request: Request, store: FeedbackDep, items: ItemsDep
+) -> FeedbackResponse:
     if store is None:
         raise ApiError(NOT_READY, "feedback store is not ready", 503, retryable=True)
+    require_feedback_owner(request, body.user_id)
     # 注入了 ItemStore 才校验 item 是否存在；IdempotencyConflictError 交给全局 handler 映射为 409。
     if items is not None and not items.exists(body.item_id):
         raise ApiError(ITEM_NOT_FOUND, "item does not exist", 404)

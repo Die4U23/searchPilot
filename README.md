@@ -191,3 +191,5 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 ## 与 EvoRec 的边界
 
 SearchPilot 自己负责搜索、回退推荐与线上服务；EvoRec 的数据、指标与实验只读导入并带来源标注，跨来源数值不直接比较。
+
+设置 `SEARCHPILOT_API_TOKEN` 后，除 `GET /health/live` 外请求都要带 `Authorization: Bearer <token>`。`POST /feedback` 还要带 `X-Actor`，并且与 `user_id` 相同。未设置令牌时行为与以前一样。
