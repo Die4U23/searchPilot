@@ -90,6 +90,8 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 #    数据库模式下 API 不读 registry.json，已测实验要用 --database-url 写入。
 .venv\Scripts\python.exe scripts\migrate_database.py                       # 读 SEARCHPILOT_DATABASE_URL，或 --database-url
 .venv\Scripts\python.exe scripts\seed_items.py data\processed\<data_version>\items.parquet
+.venv\Scripts\python.exe scripts\seed_catalog.py
+.venv\Scripts\python.exe scripts\seed_impressions.py --impressions data\processed\<data_version>\impressions.parquet --history data\processed\<data_version>\user_history.parquet
 .venv\Scripts\python.exe scripts\register_measured.py --database-url $env:SEARCHPILOT_DATABASE_URL
 
 # 6. 启动 API（读取 SEARCHPILOT_DATA_DIR / SEARCHPILOT_ARTIFACT_DIR，默认 .\data 与 .\artifacts）
