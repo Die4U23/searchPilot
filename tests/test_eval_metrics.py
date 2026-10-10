@@ -7,6 +7,7 @@ import math
 import pytest
 
 from searchpilot.eval.metrics import (
+    judged_ranking,
     mean_defined,
     mrr,
     ndcg_at_k,
@@ -18,6 +19,15 @@ from searchpilot.eval.metrics import (
 # 名次：a(grade 3)、b(未标注)、c(grade 1)
 RANKED = ["a", "b", "c"]
 GRADES = {"a": 3, "c": 1}
+
+
+def test_judged_ranking_drops_unlabeled_without_reordering() -> None:
+    assert judged_ranking(["u", "a", "v", "c"], GRADES) == ["a", "c"]
+    full = ndcg_at_k(["u", "a"], {"a": 3}, 10)
+    condensed = ndcg_at_k(judged_ranking(["u", "a"], {"a": 3}), {"a": 3}, 10)
+    assert full is not None and condensed is not None
+    assert condensed == pytest.approx(1.0)
+    assert full < condensed
 
 
 def test_ndcg_at_3_hand_computed() -> None:
