@@ -47,7 +47,33 @@ def expected_calibration_error(
     return error, curve
 
 
-def binary_auc(labels: Sequence[float], probabilities: Sequence[float]) -> float | None:
+def univariate_separation(
+    labels: Sequence[float], feature: Sequence[float]
+) -> dict[str, float | int | None]:
+    """把单个特征当作分数。AUC 低于 0.5 表示数值越大越不容易点击。"""
+    y = np.asarray(labels, dtype=np.float64)
+    x = np.asarray(feature, dtype=np.float64)
+    if y.shape != x.shape:
+        raise ValueError("labels and feature must have the same shape")
+    auc = binary_auc(y, x)
+    clicked = y == 1
+    zero = x <= 0
+    return {
+        "n": int(y.size),
+        "n_clicked": int(clicked.sum()),
+        "click_rate": float(y.mean()) if y.size else None,
+        "auc": auc,
+        "mean_when_clicked": float(x[clicked].mean()) if clicked.any() else None,
+        "mean_when_unclicked": float(x[~clicked].mean()) if (~clicked).any() else None,
+        "n_feature_zero": int(zero.sum()),
+        "click_rate_when_zero": float(y[zero].mean()) if zero.any() else None,
+        "click_rate_when_positive": float(y[~zero].mean()) if (~zero).any() else None,
+    }
+
+
+def binary_auc(
+    labels: Sequence[float] | np.ndarray, probabilities: Sequence[float] | np.ndarray
+) -> float | None:
     """两类都出现时返回 AUC，否则 None。"""
     y = np.asarray(labels, dtype=np.int64)
     if np.unique(y).size < 2:

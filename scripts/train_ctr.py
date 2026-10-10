@@ -109,7 +109,8 @@ def _group_metrics(
     return {key: _slice_metrics(labels, probabilities, mask) for key, mask in masks.items()}
 
 
-def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
+def load_split_features(data_dir: Path) -> tuple[object, ...]:
+    """与训练同一套种子和切分。返回三个 split 的未标准化特征，以及原始抽样表。"""
     root = data_dir / "processed" / DATA_VERSION
     impressions = pq.read_table(
         root / "impressions.parquet",
@@ -172,6 +173,45 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
     x_train, y_train, _h_train, _p_train = matrix_of(train_rows)
     x_val, y_val, _h_val, _p_val = matrix_of(val_rows)
     x_test, y_test, h_test, p_test = matrix_of(test_rows)
+    return (
+        x_train,
+        y_train,
+        x_val,
+        y_val,
+        x_test,
+        y_test,
+        h_test,
+        p_test,
+        train_rows,
+        val_rows,
+        test_rows,
+        item_clicks,
+        item_category,
+        item_title_chars,
+        user_history_len,
+        user_category_counts,
+    )
+
+
+def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
+    (
+        x_train,
+        y_train,
+        x_val,
+        y_val,
+        x_test,
+        y_test,
+        h_test,
+        p_test,
+        train_rows,
+        val_rows,
+        test_rows,
+        item_clicks,
+        item_category,
+        item_title_chars,
+        user_history_len,
+        user_category_counts,
+    ) = load_split_features(data_dir)
     mean, std = fit_standardizer(x_train)
     train_x = apply_standardizer(x_train, mean, std)
     val_x = apply_standardizer(x_val, mean, std)
