@@ -27,6 +27,14 @@ def test_auc_none_for_one_class() -> None:
     assert binary_auc([0, 0, 0], [0.2, 0.3, 0.4]) is None
 
 
+def test_train_binary_repeats_with_the_same_seed() -> None:
+    features = np.array([[0.0], [1.0], [0.2], [0.8]], dtype=np.float64)
+    labels = np.array([0, 1, 0, 1])
+    first = train_binary(LogisticModel(1), features, labels, epochs=3, seed=7)
+    second = train_binary(LogisticModel(1), features, labels, epochs=3, seed=7)
+    assert predict_logits(first, features).tolist() == predict_logits(second, features).tolist()
+
+
 def test_linear_model_separates_a_simple_pattern() -> None:
     features = np.array([[0.0], [0.0], [1.0], [1.0]], dtype=np.float64)
     labels = np.array([0, 0, 1, 1])
