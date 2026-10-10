@@ -63,8 +63,8 @@ def main() -> int:
     pool = create_pool(args.database_url)
     try:
         for batch in _batches(rows, args.batch_size):
-            with pool.connection() as connection:
-                connection.executemany(UPSERT_SQL, batch)
+            with pool.connection() as connection, connection.cursor() as cursor:
+                cursor.executemany(UPSERT_SQL, batch)
     finally:
         pool.close()
     print(f"Upserted {len(rows)} items.")
