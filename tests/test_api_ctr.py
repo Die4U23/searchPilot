@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from searchpilot.bootstrap import create_app
-from searchpilot.ctr.runtime import FEATURE_NAMES, load_ctr
+from searchpilot.ctr.runtime import FEATURE_NAMES, CtrNotReadyError, load_ctr
 
 MakeClient = Callable[..., TestClient]
 
@@ -82,3 +82,13 @@ def test_ctr_score_more_than_100_candidates_422(
     response = make_client().post("/ctr/score", json=payload)
     assert response.status_code == 422
     fakes.assert_error_envelope(response.json(), "INVALID_INPUT", retryable=False)
+
+
+def test_ctr_rejects_mismatched_feature_names(tmp_path: Path) -> None:
+    _write_ctr_artifacts(tmp_path / "ctr")
+    meta_path = tmp_path / "ctr" / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["feature_names"] = ["other_feature", "still_wrong", "nope", "no"]
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    with pytest.raises(CtrNotReadyError, match="feature_names"):
+        load_ctr(tmp_path)
