@@ -102,7 +102,7 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 ### Docker
 
-`docker compose up --build` 会先跑数据库迁移，再启动 API。物品导入仍需在容器外执行 `scripts/seed_items.py`。
+需要 Docker Desktop（Linux 容器）。`docker compose up --build` 在容器里的 PostgreSQL 上先跑迁移，再启动 API，端口是 `8000`。`data/` 和 `artifacts/` 以只读方式挂进去，不打进镜像。镜像只装默认依赖，没有 torch，所以向量、LTR 和 CTR 在容器里是未就绪。物品、曝光和实验登记仍要在容器外导入，或对容器里的库执行 `scripts/seed_items.py`。
 
 配置全部来自环境变量，见 [`.env.example`](.env.example)（前缀 `SEARCHPILOT_`）。
 
