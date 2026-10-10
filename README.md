@@ -3,7 +3,7 @@
 一个可评估的搜索与广告排序实验平台：**BM25 / 向量 / RRF 搜索 + 广告 CTR 预估与校准 + 回退推荐 + 实验来源登记**。
 上游 EvoRec 的实验结果只会以**标注来源**（`source`、`source_ref`、commit、SHA-256）的方式被引用，不会被当作本项目的实测结论。
 
-> 当前阶段：MVP 骨架 + 检索 V1。已实现服务层（健康检查、搜索 BM25 / 向量 / RRF / LTR、回退推荐、反馈接口）；CTR/校准、eCPM 对照、实验登记与 Agent 均为**规划中**。
+> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注不是人工双标；外部语言模型上的 Agent 评测未跑。
 
 ## 快速开始
 
@@ -55,9 +55,12 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 #    回退推荐：Popular / ItemCF 在 dev 切分上的 Recall@20 / nDCG@10 / coverage@10，按冷启动分段
 .venv\Scripts\python.exe scripts\evaluate_fallback.py --data-dir data --output-json artifacts\recommend\eval.json --output-md artifacts\recommend\eval.md
 
-# 5.（可选）PostgreSQL：迁移并导入物品；设置 SEARCHPILOT_DATABASE_URL 后 API 的反馈写入与就绪检查走数据库
+# 5.（可选）PostgreSQL：迁移、导入物品，并把已测实验写入数据库
+#    设置 SEARCHPILOT_DATABASE_URL 后，反馈、就绪检查和实验查询走数据库。
+#    数据库模式下 API 不读 registry.json，已测实验要用 --database-url 写入。
 .venv\Scripts\python.exe scripts\migrate_database.py                       # 读 SEARCHPILOT_DATABASE_URL，或 --database-url
 .venv\Scripts\python.exe scripts\seed_items.py data\processed\<data_version>\items.parquet
+.venv\Scripts\python.exe scripts\register_measured.py --database-url $env:SEARCHPILOT_DATABASE_URL
 
 # 6. 启动 API（读取 SEARCHPILOT_DATA_DIR / SEARCHPILOT_ARTIFACT_DIR，默认 .\data 与 .\artifacts）
 .venv\Scripts\python.exe scripts\run_api.py
@@ -123,11 +126,11 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 
 ## 已知限制
 
-- 本机没有 PostgreSQL 密码时，实验登记用 `artifacts/experiments/registry.json`，不写数据库。
+- 未设置 `SEARCHPILOT_DATABASE_URL` 时，实验登记读 `artifacts/experiments/registry.json`，反馈写在内存里。
 - 查询标注不是人工双标。
 - 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
 - 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
-- `docker compose up` 不会自动迁移或导入物品。
+- `docker compose up` 会先迁移再启动 API，不会自动导入物品。
 - 没有真实的 EvoRec 结果文件时，导入器用本地夹具。跨来源比较返回不可比。
 
 ## 与 EvoRec 的边界
