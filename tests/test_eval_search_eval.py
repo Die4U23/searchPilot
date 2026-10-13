@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from searchpilot.eval.report import render_markdown, write_json, write_markdown
-from searchpilot.eval.search_eval import evaluate_from_files
+from searchpilot.eval.search_eval import evaluate_from_files, merge_label_maps
 from searchpilot.ports import Document
 from searchpilot.search.service import InMemorySearchService
 
@@ -83,6 +83,15 @@ def _write_eval_files(directory: Path) -> tuple[Path, Path]:
         ],
     )
     return queries, labels
+
+
+def test_merge_label_maps_keeps_the_higher_grade() -> None:
+    left = {"q": {"a": 1, "b": 3}}
+    right = {"q": {"b": 1, "c": 2}, "r": {"a": 0}}
+    merged = merge_label_maps(left, right)
+    assert merged == {"q": {"a": 1, "b": 3, "c": 2}, "r": {"a": 0}}
+    assert left == {"q": {"a": 1, "b": 3}}
+    assert right["q"]["b"] == 1
 
 
 def test_split_segments_skipped_and_failures(tmp_path: Path) -> None:

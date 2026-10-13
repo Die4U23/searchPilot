@@ -1,6 +1,6 @@
 # 补标后的检索对照（grok-tool 口径，test 全部候选已标）
 
-2026-10-10。标注 = `labels.csv`（grok 原始）+ `labels_tool.csv`（grok-tool 补标 test 的 142 对），共 1154 对。test 15 条查询的候选池**全部有分数**，因此「未标注当 0」与「只评已标注」两种口径完全一致。
+2026-10-10。下表用的标注是 `labels.csv`（grok 原始）加上当时 `labels_tool.csv` 里 test 的 142 对，共 1154 对。test 15 条查询的候选池**全部有分数**，因此「未标注当 0」与「只评已标注」两种口径完全一致。之后 `labels_tool.csv` 又补上了 train/val，文件本身现为 938 行；下表没有重跑。
 
 | mode | nDCG@10 | MRR@10 | 补标前 nDCG@10 | 补标前 MRR@10 |
 |---|---:|---:|---:|---:|
@@ -22,4 +22,4 @@ test 全标注下的排序：**vector > hybrid > bm25 > ltr**（nDCG@10 口径�
 
 - 向量检索在完整评估下是明显最优
 - BM25 的前排优势是标注偏置的假象
-- 正式评估建议以 `labels_tool.csv` 作为 test 补标口径；train/val 的 796 条候选仍未标，全部候选标注前，完整切分结论仍不完整
+- 正式评估建议以 `labels_tool.csv` 作为补标口径。该文件现已覆盖候选池全部 938 对（test 142、train 652、val 144），`annotator` 均为 `grok-tool`。评估脚本默认仍读 `labels.csv`，上表数字不会因 train/val 补标自动改变。
