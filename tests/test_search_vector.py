@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier, Lock
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,6 +16,7 @@ from searchpilot.ports import Document
 from searchpilot.search.errors import SearchNotReadyError
 from searchpilot.search.service import InMemorySearchService
 from searchpilot.search.vector_index import (
+    SentenceTransformerQueryEncoder,
     VectorIndex,
     l2_normalize_rows,
     load_vector_index,
@@ -134,3 +140,63 @@ def test_vector_hash_mismatch_raises(tmp_path: Path) -> None:
     meta_path.write_text(text, encoding="utf-8")
     with pytest.raises(SearchNotReadyError):
         load_vector_index(tmp_path)
+
+
+def test_concurrent_cold_queries_construct_one_encoder(monkeypatch: pytest.MonkeyPatch) -> None:
+    start = Barrier(8, timeout=5)
+    counts_lock = Lock()
+    constructions: list[str] = []
+    inputs: list[str] = []
+
+    class FakeModel:
+        def __init__(self, name: str) -> None:
+            with counts_lock:
+                constructions.append(name)
+            # Let the other workers reach the cold encoder while construction is in flight.
+            time.sleep(0.05)
+
+        def encode(self, text: str, **kwargs: object) -> list[float]:
+            with counts_lock:
+                inputs.append(text)
+            return [1.0, 0.0]
+
+    monkeypatch.setitem(
+        sys.modules, "sentence_transformers", SimpleNamespace(SentenceTransformer=FakeModel)
+    )
+    encoder = SentenceTransformerQueryEncoder("fixture", "prefix: ")
+
+    def query(i: int) -> np.ndarray:
+        start.wait()
+        return encoder(str(i))
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        vectors = list(pool.map(query, range(8)))
+    assert constructions == ["fixture"]
+    assert sorted(inputs) == [f"prefix: {i}" for i in range(8)]
+    for vector in vectors:
+        np.testing.assert_array_equal(vector, np.array([1.0, 0.0], dtype=np.float32))
+
+
+def test_failed_encoder_initialization_can_recover(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = 0
+
+    class FakeModel:
+        def encode(self, text: str, **kwargs: object) -> list[float]:
+            return [1.0, 0.0]
+
+    def construct(name: str) -> FakeModel:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise RuntimeError("fixture load failure")
+        return FakeModel()
+
+    monkeypatch.setitem(
+        sys.modules, "sentence_transformers", SimpleNamespace(SentenceTransformer=construct)
+    )
+    encoder = SentenceTransformerQueryEncoder("fixture", "")
+    with pytest.raises(RuntimeError, match="fixture load failure"):
+        encoder("first")
+    np.testing.assert_array_equal(encoder("second"), [1.0, 0.0])
+    encoder("third")
+    assert attempts == 2

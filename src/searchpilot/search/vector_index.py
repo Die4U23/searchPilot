@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import numpy as np
@@ -266,16 +267,21 @@ class SentenceTransformerQueryEncoder:
         self._model_name = model_name
         self._query_prefix = query_prefix
         self._model: Any = None
+        self._load_lock = Lock()
 
     def __call__(self, text: str) -> np.ndarray:
         if self._model is None:
-            try:
-                from sentence_transformers import SentenceTransformer
-            except ImportError as exc:
-                raise SearchNotReadyError(
-                    "sentence-transformers is not installed; pip install -e .[vector]"
-                ) from exc
-            self._model = SentenceTransformer(self._model_name)
+            # A timed-out caller can leave its worker loading while the next request arrives.
+            # Publish only a fully constructed model, and serialize initialization, not inference.
+            with self._load_lock:
+                if self._model is None:
+                    try:
+                        from sentence_transformers import SentenceTransformer
+                    except ImportError as exc:
+                        raise SearchNotReadyError(
+                            "sentence-transformers is not installed; pip install -e .[vector]"
+                        ) from exc
+                    self._model = SentenceTransformer(self._model_name)
         vector = self._model.encode(
             self._query_prefix + text,
             normalize_embeddings=True,
