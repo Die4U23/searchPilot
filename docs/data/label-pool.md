@@ -15,7 +15,7 @@
 | hybrid@10 | 532/1012 = 0.5257 | 296/390 = 0.7590 |
 | hybrid@50 | 1004/1012 = 0.9921 | 383/390 = 0.9821 |
 
-三路前 10 的并集里，尚未出现在 `labels.csv` 的文档有 938 条。
+三路前 10 的并集里，尚未出现在 `labels.csv` 的文档有 938 条。这些文档的分数在 `labels_tool.csv`（`annotator` 为 `grok-tool`）。本表分母仍只算 `labels.csv`。并集上的检索数字见 `docs/data/pool-label-eval.md`。
 
 ## train
 

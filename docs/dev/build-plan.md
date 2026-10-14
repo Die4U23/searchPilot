@@ -7,7 +7,7 @@
 
 - Python：`E:\searchPilot\.venv\Scripts\python.exe`（3.12）。依赖已由技术主管安装；**不要修改 `pyproject.toml`**，需要新依赖时在返回报告里列出。
 - Shell：本机运行任何命令都需要 `required_permissions: ["all"]`。只在工作区内读写；不安装全局软件。
-- Git：**禁止** `git add / commit / push / stash / reset / checkout` 等一切写操作（见 `.cursor/rules/git-workflow.mdc`）。所有改动留在工作区，由项目所有者审核提交。
+- Git：2026-10-13 所有者已授权代理自主分支、提交、PR 与 CI；按 `docs/dev/git-workflow.md` 执行，不添加共同作者或代理贡献者。禁止丢弃无关改动或改写历史。
 - 网络：pip 可用。MIND 数据下载可能需要额外网络权限；下载失败不要阻塞，用合成小样本完成开发与测试并记录。
 - 其他代理正在同一工作区并行写不同目录：**只写自己名下的文件**，不要"顺手"改别人的文件或格式化整个仓库。
 - 文件编码一律 UTF-8（`open(..., encoding="utf-8")`），路径用 `pathlib`，CSV 用 `newline=""`。
@@ -116,6 +116,8 @@
 | `SEARCHPILOT_DB_POOL_MIN` / `_MAX` | `1` / `4` | |
 
 ## 6. 当前状态（2026-10-08 19:55 交接快照）
+
+这一节是当时的快照，不要拿它当现状。2026-10-12 的交接在 `docs/dev/handover.md`。
 
 | 工作流 | 状态 | 备注 |
 |---|---|---|

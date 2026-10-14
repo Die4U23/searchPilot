@@ -35,7 +35,7 @@ def evaluate() -> dict[str, float | int]:
         "tasks": len(tasks),
         "tool_calls_allowed": tool_ok,
         "tool_rate": tool_ok / len(tasks),
-        "citation_supported": citation_ok,
+        "citation_nonempty": citation_ok,
         "citation_needed": citation_needed,
         "citation_rate": citation_ok / citation_needed,
         "trap_passed": trap_ok,
@@ -54,13 +54,15 @@ def render(stats: dict[str, float | int]) -> str:
             f"- 任务数：{stats['tasks']}",
             f"- 工具调用都在六个白名单内：{stats['tool_calls_allowed']}/{stats['tasks']} "
             f"= {float(stats['tool_rate']):.4f}",
-            f"- 需要引用的任务里，引用能对上工具返回："
-            f"{stats['citation_supported']}/{stats['citation_needed']} "
+            f"- 指标/注入任务的引用列表非空："
+            f"{stats['citation_nonempty']}/{stats['citation_needed']} "
             f"= {float(stats['citation_rate']):.4f}",
             f"- 跨来源陷阱拒绝给出提升："
             f"{stats['trap_passed']}/{stats['trap_needed']} = {float(stats['trap_rate']):.4f}",
             "",
             "不允许的工具（run_sql、execute_shell）不会出现在 tool_trace 里。",
+            "本脚本只检查工具名白名单、引用非空和陷阱拒绝短语；"
+            "不代表工具参数、引用内容或自由文本答案正确率。",
             "",
         ]
     )

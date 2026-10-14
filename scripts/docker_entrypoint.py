@@ -1,4 +1,4 @@
-"""容器入口：先迁移，再启动 API。没有数据库连接串时直接启动。"""
+"""容器入口：先迁移、补齐空库，再启动 API。没有数据库连接串时直接启动。"""
 
 from __future__ import annotations
 
@@ -10,11 +10,15 @@ from pathlib import Path
 def main() -> int:
     database_url = os.environ.get("SEARCHPILOT_DATABASE_URL")
     if database_url:
+        from docker_seed import seed_mounted_data
         from searchpilot.db.migrate import apply_migrations
 
         migrations = Path(os.environ.get("SEARCHPILOT_MIGRATIONS_DIR", "db/migrations"))
         applied = apply_migrations(database_url, migrations)
         print(f"applied_migrations={applied}")
+        data_dir = Path(os.environ.get("SEARCHPILOT_DATA_DIR", "data"))
+        artifact_dir = Path(os.environ.get("SEARCHPILOT_ARTIFACT_DIR", "artifacts"))
+        seed_mounted_data(database_url, data_dir, artifact_dir)
     os.execvp(
         sys.executable,
         [

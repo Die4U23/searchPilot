@@ -188,6 +188,19 @@ def load_queries(path: Path, *, split: str | None = None) -> list[EvalQuery]:
     return sorted(queries, key=lambda q: q.query_id)
 
 
+def merge_label_maps(
+    *maps: Mapping[str, Mapping[str, int]],
+) -> dict[str, dict[str, int]]:
+    """合并多份标注。同一 ``(query_id, item_id)`` 取最大 grade，不改入参。"""
+    merged: dict[str, dict[str, int]] = {}
+    for labels in maps:
+        for query_id, grades in labels.items():
+            bucket = merged.setdefault(query_id, {})
+            for item_id, grade in grades.items():
+                bucket[item_id] = max(bucket.get(item_id, grade), grade)
+    return merged
+
+
 def load_labels(path: Path) -> dict[str, dict[str, int]]:
     """读取 ``labels.csv`` 为 ``{query_id: {item_id: grade}}``；重复标注取最大 grade。"""
     required = {"query_id", "item_id", "grade"}

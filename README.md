@@ -5,6 +5,8 @@
 
 > 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注可以由外部工具完成；外部语言模型上的 Agent 评测未跑。
 
+2026-10-13 接手结果见 [本轮验收](docs/dev/acceptance-2026-10-13.md)：补齐并发压测、train/val 大分歧裁定与外部模型评测入口，并修复向量编码器并发初始化。正式标注入口与模型栈保持冻结，具体口径见 [评估策略](docs/data/evaluation-policy.md)。
+
 ## 架构
 
 ```text
@@ -33,7 +35,7 @@ MIND Small，研究用途，原始文件不进 Git。下载脚本核对 SHA-256�
 
 查询集 100 条，种子 `20261009`，按查询切成 70 / 15 / 15，六类都有样本。双标 20 条、206 对：完全一致 0.9272，相邻一致 1.0，二次加权 kappa 0.9702。当前 `annotator` 是 `grok-a` 和 `grok-b`。详见 `docs/data/annotation-report.md`。
 
-仓库里没有真实的 EvoRec 结果文件。`evorec-itemcf` 是本地夹具，用来检查跨来源比较会被拒绝。
+Agent 固定任务中的 `evorec-itemcf` 是本地夹具，用来检查跨来源比较会被拒绝。另行导入的五份真实 EvoRec 结果及其固定 commit、SHA-256 见文末来源表，不能与夹具混用。
 
 ## 快速开始
 
@@ -102,7 +104,7 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 ### Docker
 
-需要 Docker Desktop（Linux 容器）。`docker compose up --build` 在容器里的 PostgreSQL 上先跑迁移，再启动 API，端口是 `8000`。`data/` 和 `artifacts/` 以只读方式挂进去，不打进镜像。镜像只装默认依赖，没有 sentence-transformers，所以向量和 LTR 检索会返回 503。BM25、回退推荐和 CTR 使用挂载的产物。物品、曝光和实验登记仍要另外导入容器里的数据库。
+需要 Docker Desktop（Linux 容器）。`docker compose up --build` 在容器里的 PostgreSQL 上先跑迁移。物品表、查询目录和已测实验如果是空的，会从挂载的 `data/` 与 `artifacts/` 导入一次。曝光表不导入。然后启动 API，端口是 `8000`。`data/` 和 `artifacts/` 以只读方式挂进去，不打进镜像。镜像安装 `vector` 额外依赖，并在构建时下载 `BAAI/bge-small-en-v1.5`，所以向量和 LTR 检索可以在容器里运行。第一次构建需要网络，镜像比默认安装大。
 
 配置全部来自环境变量，见 [`.env.example`](.env.example)（前缀 `SEARCHPILOT_`）。
 
@@ -164,11 +166,11 @@ POST /search
 
 ## Agent
 
-`scripts/evaluate_agent.py` 跑 50 条固定任务。当前分析器是确定性的，不调用外部语言模型。工具都在白名单内 50/50，需要引用的任务 27/27 能对上工具返回，跨来源陷阱 8/8 拒绝比较优劣。外部语言模型评测是 UNRUN。详见 `docs/data/agent-report.md`。
+`scripts/evaluate_agent.py` 跑 50 条固定任务。当前分析器是确定性的，不调用外部语言模型。旧评测的 50/50 只检查工具名属于白名单，27/27 只检查引用非空，不能据此声称参数正确或引用受到证据支持；跨来源陷阱 8/8 检查固定拒绝短语。详见 `docs/data/agent-report.md`。独立的外部模型评测入口、离线验证与 UNRUN 边界见 `docs/data/agent-llm-report.md`。
 
 ## 已测结果（搜索 2026-10-09，CTR 2026-10-10）
 
-同一套 15 条 test 查询，数据版本 `d3a904f41240`。当前标注的 `annotator` 是 `grok-a` 和 `grok-b`。已标注文档里 97.6% 落在 BM25 前 10，只有 28.1% 落在向量前 10。三路前 10 的并集还有 938 条没有分数，见 `docs/data/label-pool.md`。把未标注文档移出名单、不另打分后，test 上向量 nDCG@10 从 0.7769 升到 0.9432，LTR 从 0.4596 升到 0.8338，BM25 仍是 0.6396。见 `docs/data/judged-only.md`。
+同一套 15 条 test 查询，数据版本 `d3a904f41240`。下表读的是 `labels.csv`，`annotator` 是 `grok-a` 和 `grok-b`。已标注文档里 97.6% 落在 BM25 前 10，只有 28.1% 落在向量前 10。三路前 10 的并集里还有 938 条不在这份文件中，分数在 `labels_tool.csv`，见 `docs/data/label-pool.md`。把未标注文档移出名单、不另打分后，test 上向量 nDCG@10 从 0.7769 升到 0.9432，LTR 从 0.4596 升到 0.8338，BM25 仍是 0.6396。见 `docs/data/judged-only.md`。把 `labels_tool.csv` 并进来之后，test 与 val 的 nDCG@10 都是向量高于 RRF、高于 BM25、高于 LTR。val 只读 `labels.csv` 时 BM25 最高（0.9056），并集后降到 0.7465，向量升到 0.9161。见 `docs/data/pool-label-eval.md`。
 
 | 方案 | nDCG@10 | MRR@10 | Recall@50 |
 |---|---:|---:|---:|
@@ -183,9 +185,12 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 
 - 未设置 `SEARCHPILOT_DATABASE_URL` 时，实验登记读 `artifacts/experiments/registry.json`，反馈写在内存里。
 - 当前 `labels.csv` 的 `annotator` 是 `grok-a` 和 `grok-b`。换工具时另存 CSV，不要覆盖这两份原始文件。
+- 已保存的 LTR `ltr-4574f8f4` 在补标并集上仍低于向量和 RRF。它的 top 10 里大约六成文档两份标注都没有，nDCG 把这些位置记为 0。拿掉未标注文档后，test nDCG@10 从 0.5266 升到 0.7076，高于 BM25 的 0.5571，仍低于 RRF 的 0.7236。val 上 LTR 仍是最后（0.6959），低于 BM25 的类型是 exact_entity、multi_condition、misspelling_or_abbrev。见 `docs/data/pool-label-eval.md` 和 `docs/data/ltr-query-gaps.md`。
+- 不重新训练，只把已保存的 `bm25_rank` 权重置 0 后，val 上未标注当 0 的 nDCG@10 从 0.5055 升到 0.7762，高于 BM25 的 0.7465。只替换缺席名次 101 做不到这一点。这不是新的线上模型。见 `docs/data/ltr-rank-ablation.md`。
 - 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
 - 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
-- `docker compose up` 会先迁移再启动 API，不会自动导入物品。
+- 2026-10-13 独立本地 API 并发 4、每模式 120 请求，正式请求共 480/480 成功；预热 15/16 成功，首次向量预热在 10 秒超时。原始记录和 p95/p99 见 `docs/data/bench-concurrent.md`。这是初始化锁修复前的单轮测量，不代表最终版本冷启动、资源或稳定性验收。
+- `docker compose up` 会先迁移，并为空表导入物品、查询目录与已测实验，再启动 API；曝光表不自动导入。
 - Agent 固定任务里的 `evorec-itemcf` 仍是本地夹具。真实结果在下面的来源表里，协议不同，不能和本项目的 nDCG 放在一张提升表里。
 
 ## 与 EvoRec 的边界
