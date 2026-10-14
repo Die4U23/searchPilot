@@ -148,6 +148,16 @@ async def request_once(
                 outcome="success",
                 model_version=parsed.model_version,
                 result_count=len(parsed.results),
+                result_sha256=hashlib.sha256(
+                    json.dumps(
+                        [hit.model_dump(mode="json") for hit in parsed.results],
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode()
+                ).hexdigest(),
+                ranking_sha256=hashlib.sha256(
+                    json.dumps(ids, separators=(",", ":")).encode()
+                ).hexdigest(),
             )
     except (TimeoutError, httpx.TimeoutException):
         record["outcome"] = "timeout"

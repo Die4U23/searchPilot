@@ -167,7 +167,7 @@ class VectorIndex:
         if finite_count == 0:
             return []
         k = min(limit, finite_count)
-        candidates = [index for index in range(scores.shape[0]) if np.isfinite(scores[index])]
+        candidates = np.flatnonzero(np.isfinite(scores)).tolist()
         chosen = heapq.nsmallest(
             k,
             candidates,

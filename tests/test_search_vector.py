@@ -200,3 +200,75 @@ def test_failed_encoder_initialization_can_recover(monkeypatch: pytest.MonkeyPat
     np.testing.assert_array_equal(encoder("second"), [1.0, 0.0])
     encoder("third")
     assert attempts == 2
+
+
+def _reference_vector_search(
+    index: VectorIndex, query: np.ndarray, limit: int, category: str | None
+) -> list[tuple[str, float]]:
+    """Independent full-sort oracle: no heap or vectorized candidate-selection path."""
+    vector = np.asarray(query, dtype=np.float32).reshape(-1)
+    norm = float(np.linalg.norm(vector))
+    if norm == 0 or not index.item_ids:
+        return []
+    scores = index.matrix @ (vector / norm).astype(np.float32)
+    candidates = [
+        (item_id, float(scores[row]))
+        for row, item_id in enumerate(index.item_ids)
+        if np.isfinite(scores[row])
+        and (category is None or index.categories[row].casefold() == category.casefold())
+    ]
+    return sorted(candidates, key=lambda pair: (-pair[1], pair[0]))[:limit]
+
+
+def _selection_index(matrix: np.ndarray, categories: tuple[str, ...]) -> VectorIndex:
+    # IDs run opposite to row order so stable row order cannot impersonate item_id tie-breaking.
+    ids = tuple(f"N{row:04}" for row in reversed(range(len(categories))))
+    meta = make_vector_meta(
+        matrix=matrix, model_name="fixture", data_version="selection", input_sha256={}
+    )
+    return VectorIndex(ids, categories, matrix, meta)
+
+
+@pytest.mark.parametrize("limit", [1, 2, 10])
+@pytest.mark.parametrize("category", [None, "NEWS", "sports", "missing"])
+def test_candidate_selection_preserves_finite_scores_and_filters(limit, category) -> None:
+    matrix = np.array(
+        [[0.5, 1], [np.nan, 1], [np.inf, 1], [-np.inf, 1], [-0.5, 1], [0.5, 1]],
+        dtype=np.float32,
+    )
+    index = _selection_index(matrix, ("news", "news", "news", "news", "sports", "News"))
+    query = np.array([1, 0], dtype=np.float32)
+    assert index.search(query, limit, category=category) == _reference_vector_search(
+        index, query, limit, category
+    )
+
+
+@pytest.mark.parametrize("seed", [0, 42, 20261014])
+def test_candidate_selection_matches_full_sort_on_seeded_inputs(seed: int) -> None:
+    rng = np.random.default_rng(seed)
+    for size in (0, 1, 257):
+        matrix = l2_normalize_rows(rng.integers(-3, 4, size=(size, 8)).astype(np.float32))
+        # Duplicate complete rows create ties; varying categories exercise post-score filtering.
+        if size > 1:
+            matrix[1:9] = matrix[0]
+        categories = tuple("news" if row % 3 else "sports" for row in range(size))
+        index = _selection_index(matrix, categories)
+        queries = [rng.normal(size=8).astype(np.float32), np.zeros(8, dtype=np.float32)]
+        for query in queries:
+            for limit in (1, 10, 300):
+                for category in (None, "NEWS", "missing"):
+                    assert index.search(
+                        query, limit, category=category
+                    ) == _reference_vector_search(index, query, limit, category)
+
+
+def test_candidate_selection_all_nonfinite_returns_empty() -> None:
+    matrix = np.array([[np.nan, 1], [np.inf, 1], [-np.inf, 1]], dtype=np.float32)
+    index = _selection_index(matrix, ("news",) * 3)
+    assert index.search(np.array([1, 0], dtype=np.float32), 100) == []
+
+
+def test_candidate_selection_many_cutoff_ties_uses_item_id() -> None:
+    index = _selection_index(np.ones((257, 2), dtype=np.float32), ("news",) * 257)
+    result = index.search(np.array([1, 0], dtype=np.float32), 100)
+    assert result == [(f"N{row:04}", 1.0) for row in range(100)]

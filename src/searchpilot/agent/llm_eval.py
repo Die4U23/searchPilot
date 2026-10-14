@@ -9,6 +9,7 @@ import math
 import os
 import re
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
@@ -63,6 +64,54 @@ class EvaluationError(Exception):
 
 class ResponseTooLargeError(EvaluationError):
     """Response body exceeded the bounded evaluation buffer."""
+
+
+class BudgetExhaustedError(Exception):
+    """No request was sent because its reservation exceeds the run budget."""
+
+
+@dataclass
+class RequestBudget:
+    max_requests: int = 100
+    max_output_tokens: int = 204800
+    max_tokens_per_request: int = 2048
+    requests_reserved: int = 0
+    output_tokens_reserved: int = 0
+
+    def reserve(self) -> None:
+        if (
+            self.requests_reserved >= self.max_requests
+            or self.output_tokens_reserved + self.max_tokens_per_request > self.max_output_tokens
+        ):
+            raise BudgetExhaustedError("request_or_output_budget_exhausted")
+        self.requests_reserved += 1
+        self.output_tokens_reserved += self.max_tokens_per_request
+
+
+def validate_run(
+    *,
+    task_ids: list[str] | None,
+    max_requests: int,
+    max_output_tokens: int,
+    max_tokens_per_request: int,
+    timeout: float,
+) -> list[str]:
+    """Validate without reading credentials, opening files or making requests."""
+    for name, value, upper in (
+        ("max_requests", max_requests, 100),
+        ("max_output_tokens", max_output_tokens, 204800),
+        ("max_tokens_per_request", max_tokens_per_request, 2048),
+    ):
+        if type(value) is not int or not 1 <= value <= upper:
+            raise ValueError(f"{name} must be an integer in [1, {upper}]")
+    if not math.isfinite(timeout) or not 0 < timeout <= 300:
+        raise ValueError("timeout must be finite and in (0, 300]")
+    all_ids = [task["task_id"] for task in build_tasks()]
+    if task_ids is None:
+        return all_ids
+    if not task_ids or len(task_ids) != len(set(task_ids)) or not set(task_ids) <= set(all_ids):
+        raise ValueError("task_ids must be unique known fixed-suite IDs")
+    return [task_id for task_id in all_ids if task_id in task_ids]
 
 
 def digest(value: Any) -> str:
@@ -203,7 +252,10 @@ async def request_json(
     stage: str,
     ledger: TextIO,
     timeout: float,
+    budget: RequestBudget,
 ) -> dict[str, Any]:
+    # Reserve worst-case output before sending, never refund actual/unknown usage.
+    budget.reserve()
     request_id = "llm_" + uuid4().hex
     event: dict[str, Any] = {
         "event": "request",
@@ -212,6 +264,9 @@ async def request_json(
         "request_id": request_id,
         "status": "pending",
         "usage": None,
+        "reserved_output_tokens": budget.max_tokens_per_request,
+        "requests_reserved_total": budget.requests_reserved,
+        "output_tokens_reserved_total": budget.output_tokens_reserved,
     }
     # Durable before sending. An interrupted request remains pending with unknown usage.
     write_event(ledger, event)
@@ -226,7 +281,7 @@ async def request_json(
                     "model": model,
                     "messages": messages,
                     "temperature": 0,
-                    "max_tokens": 2048,
+                    "max_tokens": budget.max_tokens_per_request,
                     "stream": False,
                     "response_format": {"type": "json_object"},
                 },
@@ -290,9 +345,19 @@ async def evaluate(
     model: str,
     ledger_path: Path,
     timeout: float = 30.0,
+    task_ids: list[str] | None = None,
+    max_requests: int = 100,
+    max_output_tokens: int = 204800,
+    max_tokens_per_request: int = 2048,
 ) -> dict[str, Any]:
-    if not math.isfinite(timeout) or not 0 < timeout <= 300:
-        raise ValueError("timeout must be finite and in (0, 300]")
+    selected_ids = validate_run(
+        task_ids=task_ids,
+        max_requests=max_requests,
+        max_output_tokens=max_output_tokens,
+        max_tokens_per_request=max_tokens_per_request,
+        timeout=timeout,
+    )
+    budget = RequestBudget(max_requests, max_output_tokens, max_tokens_per_request)
     tasks = build_tasks()
     rows: list[dict[str, Any]] = []
     # Exclusive creation: never overwrite, resume or resend an interrupted run.
@@ -306,13 +371,15 @@ async def evaluate(
                 "endpoint_sha256": digest(endpoint),
                 "evaluator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 "task_count": len(tasks),
+                "selected_task_ids": selected_ids,
                 "task_sha256": digest(tasks),
                 "prompt_sha256": digest([PLAN_PROMPT, ANSWER_PROMPT]),
                 "fixture_sha256": digest([r.to_dict() for r in demo_store().list_records()]),
                 "timeout_seconds_per_request": timeout,
-                "max_requests": len(tasks) * 2,
+                "max_requests": max_requests,
+                "max_output_tokens": max_output_tokens,
                 "temperature": 0,
-                "max_tokens_per_request": 2048,
+                "max_tokens_per_request": max_tokens_per_request,
                 "max_response_bytes": MAX_RESPONSE_BYTES,
                 "fixture_only": True,
                 "retry_count": 0,
@@ -320,12 +387,20 @@ async def evaluate(
         )
         for task in tasks:
             started = time.monotonic()
+            before_requests = budget.requests_reserved
             row: dict[str, Any] = {
                 "event": "task",
                 "task_id": task["task_id"],
                 "kind": task["kind"],
                 "status": "failed",
+                "selected": task["task_id"] in selected_ids,
+                "attempted": False,
             }
+            if not row["selected"]:
+                row.update(status="unrun", reason="not_selected", elapsed_seconds=0.0)
+                write_event(ledger, row)
+                rows.append(row)
+                continue
             try:
                 plan = await request_json(
                     client,
@@ -339,6 +414,7 @@ async def evaluate(
                     stage="plan",
                     ledger=ledger,
                     timeout=timeout,
+                    budget=budget,
                 )
                 row["plan"] = plan
                 result = execute_plan(plan)
@@ -361,12 +437,17 @@ async def evaluate(
                     stage="answer",
                     ledger=ledger,
                     timeout=timeout,
+                    budget=budget,
                 )
                 row["final"] = final
                 row["scores"] = score(task, plan, result, final)
                 row["status"] = "completed"
+            except BudgetExhaustedError as exc:
+                row["status"] = "budget_exhausted"
+                row["error"] = str(exc)
             except EvaluationError as exc:
                 row["error"] = str(exc)
+            row["attempted"] = budget.requests_reserved > before_requests
             row["elapsed_seconds"] = time.monotonic() - started
             write_event(ledger, row)
             rows.append(row)
@@ -381,6 +462,11 @@ async def evaluate(
             if event["usage"] is not None and "total_tokens" in event["usage"]
         ]
         summary["requests_sent"] = len(requests)
+        summary["requests_reserved"] = budget.requests_reserved
+        summary["output_tokens_reserved"] = budget.output_tokens_reserved
+        summary["max_requests"] = max_requests
+        summary["max_output_tokens"] = max_output_tokens
+        summary["max_tokens_per_request"] = max_tokens_per_request
         summary["usage_known_requests"] = len(known)
         summary["usage_unknown_requests"] = len(requests) - len(known)
         summary["known_total_tokens"] = sum(usage["total_tokens"] for usage in known)
@@ -400,9 +486,17 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         )
 
     citation_kinds = {"searchpilot", "evorec", "inject", "segment"}
+    attempted = [row for row in rows if row["attempted"]]
     return {
         "status": "COMPLETED",
         "tasks": len(rows),
+        "suite_tasks": len(rows),
+        "selected_tasks": sum(row["selected"] for row in rows),
+        "attempted_tasks": len(attempted),
+        "unrun_tasks": len(rows) - len(attempted),
+        "selected_unrun_tasks": sum(row["selected"] and not row["attempted"] for row in rows),
+        "completed_tasks": sum(row["status"] == "completed" for row in rows),
+        "budget_exhausted_tasks": sum(row["status"] == "budget_exhausted" for row in rows),
         "failed_requests_or_protocol": sum(row["status"] == "failed" for row in rows),
         "structured_pass": count("structured_pass"),
         "tool_arguments_match": count("tool_arguments_match"),
@@ -413,9 +507,10 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "trap_needed": sum(row["kind"] == "trap" for row in rows),
         "free_text_semantics": "UNSCORED",
         "fixture_only": True,
-        "task_p95_seconds": sorted(row["elapsed_seconds"] for row in rows)[
-            math.ceil(0.95 * len(rows)) - 1
+        "task_p95_seconds": sorted(row["elapsed_seconds"] for row in attempted)[
+            math.ceil(0.95 * len(attempted)) - 1
         ]
-        if rows
+        if attempted
         else None,
+        "latency_population": "attempted_tasks_including_failures",
     }

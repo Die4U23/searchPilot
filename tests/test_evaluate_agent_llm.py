@@ -48,16 +48,11 @@ def response(content: dict) -> httpx.Response:
 
 @pytest.mark.asyncio
 async def test_all_50_tasks_offline_and_exclusive_ledger(tmp_path: Path) -> None:
-    tasks = {task["question"]: task for task in build_tasks()}
     requests: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request.headers["X-Request-ID"])
-        body = json.loads(request.content)
-        content = body["messages"][-1]["content"]
-        if content in tasks:
-            return response(expected_call(tasks[content]))
-        return response(answer(json.loads(content)["tool_result"]))
+        return golden_response(request)
 
     path = tmp_path / "run.jsonl"
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -271,3 +266,172 @@ async def test_oversize_body_stops_stream_and_counts_failure(tmp_path: Path) -> 
     results = [event for event in events if event["event"] == "request_result"]
     assert all(event["status"] == "response_too_large" for event in results)
     assert all(event["usage"] is None for event in results)
+
+
+def golden_response(request: httpx.Request) -> httpx.Response:
+    content = json.loads(request.content)["messages"][-1]["content"]
+    tasks = {task["question"]: task for task in build_tasks()}
+    if content in tasks:
+        return response(expected_call(tasks[content]))
+    return response(answer(json.loads(content)["tool_result"]))
+
+
+@pytest.mark.asyncio
+async def test_selected_smoke_preserves_full_suite_denominators(tmp_path: Path) -> None:
+    sent = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return golden_response(request)
+
+    path = tmp_path / "smoke.jsonl"
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await evaluate(
+            client,
+            endpoint="http://localhost/test",
+            model="fake",
+            ledger_path=path,
+            task_ids=["search-00"],
+            max_requests=2,
+            max_output_tokens=1024,
+            max_tokens_per_request=512,
+        )
+    assert len(sent) == 2 and all(body["max_tokens"] == 512 for body in sent)
+    assert summary["tasks"] == summary["suite_tasks"] == 50
+    assert summary["selected_tasks"] == summary["attempted_tasks"] == 1
+    assert summary["structured_pass"] == summary["completed_tasks"] == 1
+    assert summary["unrun_tasks"] == 49 and summary["selected_unrun_tasks"] == 0
+    assert summary["citation_needed"] == 32 and summary["trap_needed"] == 8
+    assert summary["output_tokens_reserved"] == 1024
+    events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    task_rows = [event for event in events if event["event"] == "task"]
+    assert len(task_rows) == 50
+    assert sum(row["status"] == "unrun" for row in task_rows) == 49
+
+
+@pytest.mark.parametrize(
+    "limits",
+    [
+        {"max_requests": 1, "max_output_tokens": 4096},
+        {"max_requests": 2, "max_output_tokens": 2048},
+    ],
+)
+@pytest.mark.asyncio
+async def test_stage_two_requires_full_reservation_even_when_actual_usage_low(
+    tmp_path: Path,
+    limits: dict,
+) -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return golden_response(request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await evaluate(
+            client,
+            endpoint="http://localhost/test",
+            model="fake",
+            ledger_path=tmp_path / "budget.jsonl",
+            task_ids=["search-00"],
+            **limits,
+        )
+    assert calls == summary["requests_sent"] == summary["requests_reserved"] == 1
+    assert summary["known_total_tokens"] == 15
+    assert summary["output_tokens_reserved"] == 2048  # no refund for the actual 5 output tokens
+    assert summary["attempted_tasks"] == summary["budget_exhausted_tasks"] == 1
+    assert summary["completed_tasks"] == summary["structured_pass"] == 0
+    assert summary["unrun_tasks"] == 49
+
+
+@pytest.mark.asyncio
+async def test_budget_exhaustion_distinguishes_part_attempted_and_unrun(tmp_path: Path) -> None:
+    async with httpx.AsyncClient(transport=httpx.MockTransport(golden_response)) as client:
+        summary = await evaluate(
+            client,
+            endpoint="http://localhost/test",
+            model="fake",
+            ledger_path=tmp_path / "budget.jsonl",
+            task_ids=["search-00", "search-01", "search-02"],
+            max_requests=3,
+            max_output_tokens=6144,
+        )
+    assert summary["selected_tasks"] == summary["requests_sent"] == 3
+    assert summary["attempted_tasks"] == summary["budget_exhausted_tasks"] == 2
+    assert summary["selected_unrun_tasks"] == summary["completed_tasks"] == 1
+    assert summary["structured_pass"] == 1 and summary["unrun_tasks"] == 48
+    assert summary["output_tokens_reserved"] == 6144
+
+
+@pytest.mark.asyncio
+async def test_unknown_usage_does_not_refund_reserved_budget(tmp_path: Path) -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise httpx.ReadTimeout("unknown usage", request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await evaluate(
+            client,
+            endpoint="http://localhost/test",
+            model="fake",
+            ledger_path=tmp_path / "unknown.jsonl",
+            task_ids=["search-00", "search-01"],
+            max_requests=2,
+            max_output_tokens=2048,
+        )
+    assert calls == summary["usage_unknown_requests"] == 1
+    assert summary["total_tokens"] is None and summary["output_tokens_reserved"] == 2048
+    assert summary["failed_requests_or_protocol"] == summary["selected_unrun_tasks"] == 1
+    assert summary["structured_pass"] == 0
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"max_requests": 0},
+        {"max_requests": 101},
+        {"max_output_tokens": -1},
+        {"max_output_tokens": 204801},
+        {"max_tokens_per_request": 2049},
+        {"max_tokens_per_request": True},
+        {"task_ids": ["missing"]},
+        {"task_ids": ["search-00", "search-00"]},
+        {"task_ids": []},
+        {"timeout": float("nan")},
+    ],
+)
+@pytest.mark.asyncio
+async def test_invalid_run_options_make_no_file_and_no_calls(tmp_path: Path, options: dict) -> None:
+    def forbidden(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("invalid options must not call the model")
+
+    path = tmp_path / "invalid.jsonl"
+    async with httpx.AsyncClient(transport=httpx.MockTransport(forbidden)) as client:
+        with pytest.raises(ValueError):
+            await evaluate(
+                client, endpoint="http://localhost/test", model="fake", ledger_path=path, **options
+            )
+    assert not path.exists()
+
+
+def test_cli_budget_preview_and_invalid_options_never_read_env(monkeypatch, capsys) -> None:
+    def forbidden(*args, **kwargs):
+        raise AssertionError("must not read config or call model")
+
+    monkeypatch.setattr(
+        "scripts.evaluate_agent_llm.os", SimpleNamespace(environ=SimpleNamespace(get=forbidden))
+    )
+    monkeypatch.setattr(httpx.AsyncClient, "stream", forbidden)
+    assert (
+        main(["--task-id", "search-00", "--max-requests", "2", "--max-output-tokens", "4096"]) == 0
+    )
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "UNRUN"
+    assert summary["selected_tasks"] == 1 and summary["unrun_tasks"] == 50
+    assert summary["requests_sent"] == 0 and summary["max_output_tokens"] == 4096
+    with pytest.raises(SystemExit):
+        main(["--execute", "--max-requests", "0"])
