@@ -11,39 +11,17 @@ from scripts.evaluate_agent import evaluate as evaluate_deterministic
 from scripts.evaluate_agent import render as render_deterministic
 from scripts.evaluate_agent_llm import main
 
+from agent_llm_helpers import answer, golden_response
 from searchpilot.agent.demo import build_tasks
 from searchpilot.agent.llm_eval import (
     MAX_RESPONSE_BYTES,
-    REFUSAL,
     EvaluationError,
     evaluate,
     execute_plan,
     expected_call,
-    metric_citations,
     parse_object,
     score,
 )
-
-
-def answer(result: dict) -> dict:
-    citations = metric_citations(result)
-    prose = " ".join(citations) or "Tool evidence attached."
-    if result.get("source") == "evorec":
-        prose = f"来自 EvoRec run-fixture，commit abc123。{prose}"
-    if result.get("comparable") is False:
-        prose = REFUSAL
-    return {"answer": prose, "citations": citations, "evidence": result}
-
-
-def response(content: dict) -> httpx.Response:
-    return httpx.Response(
-        200,
-        json={
-            "model": "offline-fake",
-            "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
-        },
-    )
 
 
 @pytest.mark.asyncio
@@ -268,14 +246,6 @@ async def test_oversize_body_stops_stream_and_counts_failure(tmp_path: Path) -> 
     assert all(event["usage"] is None for event in results)
 
 
-def golden_response(request: httpx.Request) -> httpx.Response:
-    content = json.loads(request.content)["messages"][-1]["content"]
-    tasks = {task["question"]: task for task in build_tasks()}
-    if content in tasks:
-        return response(expected_call(tasks[content]))
-    return response(answer(json.loads(content)["tool_result"]))
-
-
 @pytest.mark.asyncio
 async def test_selected_smoke_preserves_full_suite_denominators(tmp_path: Path) -> None:
     sent = []
@@ -435,3 +405,57 @@ def test_cli_budget_preview_and_invalid_options_never_read_env(monkeypatch, caps
     assert summary["requests_sent"] == 0 and summary["max_output_tokens"] == 4096
     with pytest.raises(SystemExit):
         main(["--execute", "--max-requests", "0"])
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason", "error"),
+    [
+        ({"choices": [{"finish_reason": "length"}]}, "length", "incomplete_or_unexpected_response"),
+        (
+            {"choices": [{"finish_reason": "private-secret"}]},
+            "unknown",
+            "incomplete_or_unexpected_response",
+        ),
+        ({"choices": []}, None, "invalid_choices"),
+        ({"choices": [None]}, None, "invalid_choice"),
+        (
+            {"choices": [{"finish_reason": "stop", "message": {"content": "private-secret"}}]},
+            "stop",
+            "content_json",
+        ),
+        ("private-secret", None, "response_json"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_response_diagnostics_are_bounded_and_keep_usage(
+    tmp_path: Path, payload: dict | str, reason: str | None, error: str
+) -> None:
+    if isinstance(payload, dict):
+        payload["usage"] = {"prompt_tokens": 3, "completion_tokens": 7, "total_tokens": 10}
+    path = tmp_path / "diagnostics.jsonl"
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload))
+    ) as client:
+        summary = await evaluate(
+            client,
+            endpoint="http://localhost/test",
+            model="fake",
+            ledger_path=path,
+            task_ids=["search-00"],
+            max_requests=1,
+        )
+    raw = path.read_text(encoding="utf-8")
+    results = [
+        json.loads(line)
+        for line in raw.splitlines()
+        if json.loads(line)["event"] == "request_result"
+    ]
+    assert len(results) == summary["requests_sent"] == 1
+    result = results[0]
+    assert result["status"] == "invalid_response"
+    assert result.get("finish_reason") == reason
+    assert result["validation_error"] == error
+    assert "private-secret" not in raw
+    assert summary["usage_known_requests"] == int(isinstance(payload, dict))
+    assert result["usage"] == (payload["usage"] if isinstance(payload, dict) else None)
+    assert summary["structured_pass"] == 0

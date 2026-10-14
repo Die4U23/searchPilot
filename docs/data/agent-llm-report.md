@@ -1,6 +1,8 @@
 # 外部语言模型 Agent 评测
 
-2026-10-14：真实模型评测仍为 **UNRUN**。本轮只核对仓库 `.env` 与进程环境中的模型配置键，未发现可用 endpoint、model、API key；GitHub 仓库的 secret/variable 名称列表也均为空（未读取 secret 值）。`artifacts/` 未发现此前外部 Agent 调用账本；这只是本地核对，不代表全账户历史调用审计。本轮没有探测模型端点或调用模型服务，没有外部模型任务正确率、延迟或 token 消耗的实测结果。离线假响应的测试通过不表示模型通过。
+最新结果：配置就绪后已完成 [2026-10-14 真实外部评测](agent-llm-live-2026-10-14.md)：50 题、100 次请求、46/50 结构化通过，79,030 tokens，4 个失败保留。默认 CLI 预览仍返回 UNRUN，不能与实际执行结果混淆。
+
+以下为同日配置交付前的历史快照：真实模型评测当时为 **UNRUN**。本轮只核对仓库 `.env` 与进程环境中的模型配置键，未发现可用 endpoint、model、API key；GitHub 仓库的 secret/variable 名称列表也均为空（未读取 secret 值）。`artifacts/` 未发现此前外部 Agent 调用账本；这只是本地核对，不代表全账户历史调用审计。本轮没有探测模型端点或调用模型服务，没有外部模型任务正确率、延迟或 token 消耗的实测结果。离线假响应的测试通过不表示模型通过。
 
 现有 `scripts/evaluate_agent.py` 仍运行确定性分析器，报告在 `agent-report.md`。新增入口为 `scripts/evaluate_agent_llm.py`，与线上 `/agent/analyze`、默认模型和既有 50 条题目分离。
 
@@ -22,7 +24,7 @@
 .venv\Scripts\python.exe -m scripts.evaluate_agent_llm
 ```
 
-返回 `status=UNRUN, tasks=50, requests_sent=0`。未来已有授权且运行好兼容 Chat Completions 的模型时，配置完整端点与实际模型名称，再显式执行：
+返回 `status=UNRUN, tasks=50, requests_sent=0`。已有授权且运行好兼容 Chat Completions 的模型时，配置完整端点与实际模型名称，再显式执行：
 
 ```powershell
 $env:SEARCHPILOT_AGENT_LLM_ENDPOINT='http://127.0.0.1:8001/v1/chat/completions'
@@ -49,7 +51,9 @@ CLI 退出码 0 表示评测执行完毕（默认离线调用则表示已输出 
 
 ledger 与 `--out` 均独占创建，拒绝覆盖或自动续跑；默认也不会改写本文。被取消或中断的请求可能已经计费，pending/usage 未知不是零消耗。中断后先核对已有 ledger 和服务端记录，不把换文件名重跑当作自动恢复；没有完整 summary 的日志只代表未完成运行。
 
-## 本次离线验证
+后续请求日志还会记录白名单内的 `finish_reason` 和安全的 `validation_error` 阶段/原因码，帮助定位协议失败；不记录任意服务端错误正文。该诊断补丁晚于本次 100 次真实请求，无法补回旧日志缺失的原因。
+
+## 历史离线验证
 
 使用 `httpx.MockTransport`，不联网、不下载模型、不依赖数据库。覆盖 50 题完整循环及 100 个唯一请求 ID、全分母错误统计、HTTP 错误/无效 JSON/错误 envelope 类型/截断、HTTP 200 后响应体超时、错误实验/来源/数值/额外引用、陷阱“拒绝后又给提升”、危险工具/额外参数/范围校验、重复日志拒绝、默认 UNRUN 和输出不覆盖。
 
@@ -62,4 +66,4 @@ $env:TMP='E:\searchPilot\.tmp'; $env:TEMP=$env:TMP
 .venv\Scripts\python.exe -m mypy src/searchpilot/agent/llm_eval.py
 ```
 
-真实外部评测的具体阻塞：`SEARCHPILOT_AGENT_LLM_ENDPOINT`、`SEARCHPILOT_AGENT_LLM_MODEL` 未配置，认证服务所需的 `SEARCHPILOT_AGENT_LLM_API_KEY` 也未配置；仓库 CI 没有可供调度的相关配置名称。已有运行入口与有界 smoke 命令无需进一步实现。待配置已授权、支持当前 JSON 输出协议的模型服务后，显式执行并审阅完整 ledger。当前结论保持 **UNRUN**。
+历史配置阻塞（现已解除，实测见本文顶部链接）：`SEARCHPILOT_AGENT_LLM_ENDPOINT`、`SEARCHPILOT_AGENT_LLM_MODEL` 未配置，认证服务所需的 `SEARCHPILOT_AGENT_LLM_API_KEY` 也未配置；仓库 CI 没有可供调度的相关配置名称。已有运行入口与有界 smoke 命令无需进一步实现。待配置已授权、支持当前 JSON 输出协议的模型服务后，显式执行并审阅完整 ledger。该历史快照的结论为 **UNRUN**。
