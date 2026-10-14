@@ -83,6 +83,30 @@ async def respond(
     await writer.drain()
 
 
+async def test_result_fingerprint_ignores_request_id_but_detects_score_and_ranking() -> None:
+    response_score = 1.0
+    response_item = "N1"
+
+    async def handler(headers, body, writer):
+        result = payload(headers, body)
+        result["results"][0].update(score=response_score, item_id=response_item)
+        await respond(writer, headers, json.dumps(result).encode())
+
+    async with serve(handler) as base:
+        config = Config(base, requests=1, concurrency=1, warmup=0)
+        first = (await run_mode(config, "bm25", ["query"]))["requests"][0]
+        same = (await run_mode(config, "bm25", ["query"]))["requests"][0]
+        response_score = 0.5
+        score = (await run_mode(config, "bm25", ["query"]))["requests"][0]
+        response_item = "N2"
+        item = (await run_mode(config, "bm25", ["query"]))["requests"][0]
+    assert first["request_id"] != same["request_id"]
+    assert first["result_sha256"] == same["result_sha256"]
+    assert first["result_sha256"] != score["result_sha256"]
+    assert first["ranking_sha256"] == score["ranking_sha256"]
+    assert score["ranking_sha256"] != item["ranking_sha256"]
+
+
 async def test_real_concurrency_denominator_and_warmup() -> None:
     active = peak = calls = 0
     ids = set()

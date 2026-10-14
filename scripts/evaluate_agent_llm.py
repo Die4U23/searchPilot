@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from searchpilot.agent.llm_eval import evaluate
+from searchpilot.agent.llm_eval import evaluate, validate_run
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -23,14 +23,37 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ledger", type=Path, help="New JSONL path; existing files are refused")
     parser.add_argument("--out", type=Path, help="Optional NEW summary JSON; never overwritten")
     parser.add_argument("--timeout", type=float, default=30)
+    parser.add_argument("--task-id", action="append", help="Select a fixed-suite ID; repeatable")
+    parser.add_argument("--max-requests", type=int, default=100)
+    parser.add_argument("--max-output-tokens", type=int, default=204800)
+    parser.add_argument("--max-tokens-per-request", type=int, default=2048)
     args = parser.parse_args(argv)
+    try:
+        selected_ids = validate_run(
+            task_ids=args.task_id,
+            max_requests=args.max_requests,
+            max_output_tokens=args.max_output_tokens,
+            max_tokens_per_request=args.max_tokens_per_request,
+            timeout=args.timeout,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.out is not None and args.out.exists():
         parser.error("--out already exists; no requests sent")
     if not args.execute:
         result = {
             "status": "UNRUN",
             "tasks": 50,
+            "suite_tasks": 50,
+            "selected_tasks": len(selected_ids),
+            "selected_task_ids": selected_ids,
+            "attempted_tasks": 0,
+            "unrun_tasks": 50,
+            "selected_unrun_tasks": len(selected_ids),
             "requests_sent": 0,
+            "max_requests": args.max_requests,
+            "max_output_tokens": args.max_output_tokens,
+            "max_tokens_per_request": args.max_tokens_per_request,
             "reason": "explicit --execute and endpoint/model configuration required",
         }
     else:
@@ -74,6 +97,10 @@ def main(argv: list[str] | None = None) -> int:
                     model=model,
                     ledger_path=args.ledger,
                     timeout=args.timeout,
+                    task_ids=selected_ids,
+                    max_requests=args.max_requests,
+                    max_output_tokens=args.max_output_tokens,
+                    max_tokens_per_request=args.max_tokens_per_request,
                 )
 
         try:

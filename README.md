@@ -7,6 +7,8 @@
 
 2026-10-13 接手结果见 [本轮验收](docs/dev/acceptance-2026-10-13.md)：补齐并发压测、train/val 大分歧裁定与外部模型评测入口，并修复向量编码器并发初始化。正式标注入口与模型栈保持冻结，具体口径见 [评估策略](docs/data/evaluation-policy.md)。
 
+2026-10-14 的向量候选扫描优化、真实 HTTP A–B–B–A 对照及资源采样见 [性能报告](docs/data/performance-2026-10-14.md)。外部模型入口支持选题和硬预算；因缺少模型服务配置，真实 LLM 验证仍为 UNRUN。
+
 ## 架构
 
 ```text
