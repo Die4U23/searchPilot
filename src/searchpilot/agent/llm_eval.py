@@ -271,6 +271,7 @@ async def request_json(
     # Durable before sending. An interrupted request remains pending with unknown usage.
     write_event(ledger, event)
     start = time.monotonic()
+    validation_step = "response_json"
     try:
         async with asyncio.timeout(timeout):
             async with client.stream(
@@ -308,6 +309,15 @@ async def request_json(
             choice = choices[0]
             if not isinstance(choice, dict):
                 raise EvaluationError("invalid_choice")
+            # Only log known protocol values, never arbitrary provider error text.
+            finish_reason = choice.get("finish_reason")
+            event["finish_reason"] = (
+                finish_reason
+                if isinstance(finish_reason, str)
+                and finish_reason
+                in {"stop", "length", "content_filter", "tool_calls", "function_call"}
+                else "unknown"
+            )
             message = choice.get("message")
             if (
                 choice.get("finish_reason") != "stop"
@@ -316,6 +326,7 @@ async def request_json(
                 or not isinstance(message.get("content"), str)
             ):
                 raise EvaluationError("incomplete_or_unexpected_response")
+            validation_step = "content_json"
             content = parse_object(message["content"])
             event["response_model"] = raw.get("model")
             event["status"] = "completed"
@@ -331,6 +342,13 @@ async def request_json(
         raise
     except (ValueError, KeyError, IndexError, TypeError, EvaluationError) as exc:
         event["status"] = "invalid_response"
+        event["validation_error"] = (
+            str(exc)
+            if isinstance(exc, EvaluationError)
+            and str(exc)
+            in {"invalid_choices", "invalid_choice", "incomplete_or_unexpected_response"}
+            else validation_step
+        )
         raise EvaluationError("invalid_response") from exc
     finally:
         event["event"] = "request_result"

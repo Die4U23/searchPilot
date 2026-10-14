@@ -3,11 +3,11 @@
 一个可评估的搜索与广告排序实验平台：**BM25 / 向量 / RRF 搜索 + 广告 CTR 预估与校准 + 回退推荐 + 实验来源登记**。
 上游 EvoRec 的实验结果只会以**标注来源**（`source`、`source_ref`、commit、SHA-256）的方式被引用，不会被当作本项目的实测结论。
 
-> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注可以由外部工具完成；外部语言模型上的 Agent 评测未跑。
+> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。查询标注可以由外部工具完成；外部语言模型已完成固定夹具评测，结构化检查通过 46/50；线上 Agent 仍为确定性工具调用。
 
 2026-10-13 接手结果见 [本轮验收](docs/dev/acceptance-2026-10-13.md)：补齐并发压测、train/val 大分歧裁定与外部模型评测入口，并修复向量编码器并发初始化。正式标注入口与模型栈保持冻结，具体口径见 [评估策略](docs/data/evaluation-policy.md)。
 
-2026-10-14 的向量候选扫描优化、真实 HTTP A–B–B–A 对照及资源采样见 [性能报告](docs/data/performance-2026-10-14.md)。外部模型入口支持选题和硬预算；因缺少模型服务配置，真实 LLM 验证仍为 UNRUN。
+2026-10-14 的向量候选扫描优化、真实 HTTP A–B–B–A 对照及资源采样见 [性能报告](docs/data/performance-2026-10-14.md)。外部模型已完成 50 题、100 次真实请求，结构化检查通过 46/50，详见 [外部 LLM 实测](docs/data/agent-llm-live-2026-10-14.md)。
 
 ## 架构
 
@@ -168,7 +168,7 @@ POST /search
 
 ## Agent
 
-`scripts/evaluate_agent.py` 跑 50 条固定任务。当前分析器是确定性的，不调用外部语言模型。旧评测的 50/50 只检查工具名属于白名单，27/27 只检查引用非空，不能据此声称参数正确或引用受到证据支持；跨来源陷阱 8/8 检查固定拒绝短语。详见 `docs/data/agent-report.md`。独立的外部模型评测入口、离线验证与 UNRUN 边界见 `docs/data/agent-llm-report.md`。
+`scripts/evaluate_agent.py` 跑 50 条固定任务。当前分析器是确定性的，不调用外部语言模型。旧评测的 50/50 只检查工具名属于白名单，27/27 只检查引用非空，不能据此声称参数正确或引用受到证据支持；跨来源陷阱 8/8 检查固定拒绝短语。详见 `docs/data/agent-report.md`。独立的外部模型入口与协议见 [评测说明](docs/data/agent-llm-report.md)；[真实外部实测](docs/data/agent-llm-live-2026-10-14.md)为 46/50 结构化通过、引用 30/32、跨来源陷阱 8/8，保留 4 个失败，不等同于自由文本正确率或真实业务验证。
 
 ## 已测结果（搜索 2026-10-09，CTR 2026-10-10）
 
@@ -189,7 +189,7 @@ LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 
 - 当前 `labels.csv` 的 `annotator` 是 `grok-a` 和 `grok-b`。换工具时另存 CSV，不要覆盖这两份原始文件。
 - 已保存的 LTR `ltr-4574f8f4` 在补标并集上仍低于向量和 RRF。它的 top 10 里大约六成文档两份标注都没有，nDCG 把这些位置记为 0。拿掉未标注文档后，test nDCG@10 从 0.5266 升到 0.7076，高于 BM25 的 0.5571，仍低于 RRF 的 0.7236。val 上 LTR 仍是最后（0.6959），低于 BM25 的类型是 exact_entity、multi_condition、misspelling_or_abbrev。见 `docs/data/pool-label-eval.md` 和 `docs/data/ltr-query-gaps.md`。
 - 不重新训练，只把已保存的 `bm25_rank` 权重置 0 后，val 上未标注当 0 的 nDCG@10 从 0.5055 升到 0.7762，高于 BM25 的 0.7465。只替换缺席名次 101 做不到这一点。这不是新的线上模型。见 `docs/data/ltr-rank-ablation.md`。
-- 外部语言模型上的 Agent 评测是 UNRUN。当前 Agent 是确定性工具调用。
+- 外部语言模型已完成固定夹具验证（46/50 结构化通过）；自由文本语义未评分，EvoRec 为本地夹具，不能据此声称生产可用。线上 Agent 仍是确定性工具调用。
 - 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
 - 2026-10-13 独立本地 API 并发 4、每模式 120 请求，正式请求共 480/480 成功；预热 15/16 成功，首次向量预热在 10 秒超时。原始记录和 p95/p99 见 `docs/data/bench-concurrent.md`。这是初始化锁修复前的单轮测量，不代表最终版本冷启动、资源或稳定性验收。
 - `docker compose up` 会先迁移，并为空表导入物品、查询目录与已测实验，再启动 API；曝光表不自动导入。
