@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Mapping, Sequence
+from heapq import nsmallest
 from typing import Any
 
 NeighborMap = dict[str, list[tuple[str, float]]]
@@ -11,8 +13,10 @@ NeighborMap = dict[str, list[tuple[str, float]]]
 class ItemCFModel:
     """基于共现余弦相似度的 ItemCF。
 
-    ``fit`` 复杂度约 ``O(Σ_u |H_u|²)``（每用户历史内两两共现计数），
-    在数万用户、数万物品、较短点击序列下可在单机完成；邻居截断为 ``top_n_neighbors``。
+    ``fit`` 共现计数复杂度为 ``O(Σ_u |H_u|²)``，逐物品处理倒排历史，
+    不保留完整共现图。正数 k 的邻居选择为 ``O(Σ_i d_i log(k + 1))``，
+    空间为 ``O(Σ_u |H_u| + max_i d_i + I*k)``；H 为去重历史，d 为邻居数。
+    负数 k 保留 Python 切片语义，需要完整排序且可能保留每行大部分邻居。
     """
 
     def __init__(self) -> None:
@@ -25,36 +29,34 @@ class ItemCFModel:
         top_n_neighbors: int = 50,
         min_cooccurrence: int = 1,
     ) -> None:
-        item_user_count: dict[str, int] = {}
-        cooc: dict[tuple[str, str], int] = {}
-
-        for _user_id, history in histories.items():
+        item_histories: dict[str, list[list[str]]] = {}
+        for history in histories.values():
             unique_items = list(dict.fromkeys(history))
             for item in unique_items:
-                item_user_count[item] = item_user_count.get(item, 0) + 1
-            n = len(unique_items)
-            for i in range(n):
-                for j in range(i + 1, n):
-                    # 用局部变量做无序对规范化，避免改写外层循环变量导致后续 pair 错位
-                    x, y = unique_items[i], unique_items[j]
-                    key = (x, y) if x <= y else (y, x)
-                    cooc[key] = cooc.get(key, 0) + 1
+                item_histories.setdefault(item, []).append(unique_items)
 
-        neighbors: dict[str, dict[str, float]] = {}
-        for (a, b), count in cooc.items():
-            if count < min_cooccurrence:
-                continue
-            denom = (item_user_count[a] * item_user_count[b]) ** 0.5
-            if denom <= 0:
-                continue
-            sim = count / denom
-            neighbors.setdefault(a, {})[b] = sim
-            neighbors.setdefault(b, {})[a] = sim
+        neighbors: NeighborMap = {}
+        for item_id, containing_histories in item_histories.items():
+            # 每份去重历史仅贡献一次；Counter 在当前行累加，避免全局 pair 字典。
+            counts: Counter[str] = Counter()
+            for history in containing_histories:
+                counts.update(history)
+            del counts[item_id]
 
-        self._neighbors = {}
-        for item_id, nbr_scores in neighbors.items():
-            ranked = sorted(nbr_scores.items(), key=lambda p: (-p[1], p[0]))
-            self._neighbors[item_id] = ranked[:top_n_neighbors]
+            scores: list[tuple[str, float]] = []
+            for neighbor_id, count in counts.items():
+                if count < min_cooccurrence:
+                    continue
+                denom = (len(containing_histories) * len(item_histories[neighbor_id])) ** 0.5
+                scores.append((neighbor_id, count / denom))
+            if not scores:
+                continue
+
+            if top_n_neighbors > 0:
+                neighbors[item_id] = nsmallest(top_n_neighbors, scores, key=lambda p: (-p[1], p[0]))
+            else:
+                neighbors[item_id] = sorted(scores, key=lambda p: (-p[1], p[0]))[:top_n_neighbors]
+        self._neighbors = neighbors
 
     def predict(
         self,
