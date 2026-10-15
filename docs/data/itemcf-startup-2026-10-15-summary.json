@@ -1,0 +1,206 @@
+{
+  "date": "2026-10-15",
+  "baseline_commit": "4d1746217942670f522fe09b5ca837d6b5b94f08",
+  "python": "3.12.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "fit": {
+    "A1": {
+      "status": "completed",
+      "pid": 28304,
+      "users": 5000,
+      "source_sha256": "2c0ddba41fa66f5673abad9acf69997fdb11a3cdd3b5c1f50bf4cf96aeddbc99",
+      "data_sha256": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+      "load_seconds": 0.5470000000204891,
+      "fit_seconds": 3.3429999999934807,
+      "process_peak_working_set_bytes_at_fit_end": 530616320,
+      "process_peak_pagefile_bytes_at_fit_end": 918659072,
+      "model_sha256_canonical": "f1fa27ed3c147a15113e5deb90891f1ffe3ca2a9099230381090118fae03df91",
+      "prediction_sha256_canonical": "01754c3a4aac8c9de0af18e62a46b125d1c01708c8bb8d7f371397f40e3e2b4f",
+      "prediction_count": 5000
+    },
+    "B1": {
+      "status": "completed",
+      "pid": 17964,
+      "users": 5000,
+      "source_sha256": "3e8c6f0f5d3ff1565d3d2fb84a1bdac98563f076c1fcad57c4b892cfa7f1c9ff",
+      "data_sha256": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+      "load_seconds": 1.0,
+      "fit_seconds": 2.1880000000237487,
+      "process_peak_working_set_bytes_at_fit_end": 202702848,
+      "process_peak_pagefile_bytes_at_fit_end": 588455936,
+      "model_sha256_canonical": "f1fa27ed3c147a15113e5deb90891f1ffe3ca2a9099230381090118fae03df91",
+      "prediction_sha256_canonical": "01754c3a4aac8c9de0af18e62a46b125d1c01708c8bb8d7f371397f40e3e2b4f",
+      "prediction_count": 5000
+    },
+    "B2": {
+      "status": "completed",
+      "pid": 29796,
+      "users": 5000,
+      "source_sha256": "3e8c6f0f5d3ff1565d3d2fb84a1bdac98563f076c1fcad57c4b892cfa7f1c9ff",
+      "data_sha256": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+      "load_seconds": 0.5939999999827705,
+      "fit_seconds": 2.0,
+      "process_peak_working_set_bytes_at_fit_end": 202739712,
+      "process_peak_pagefile_bytes_at_fit_end": 588107776,
+      "model_sha256_canonical": "f1fa27ed3c147a15113e5deb90891f1ffe3ca2a9099230381090118fae03df91",
+      "prediction_sha256_canonical": "01754c3a4aac8c9de0af18e62a46b125d1c01708c8bb8d7f371397f40e3e2b4f",
+      "prediction_count": 5000
+    },
+    "A2": {
+      "status": "completed",
+      "pid": 16296,
+      "users": 5000,
+      "source_sha256": "2c0ddba41fa66f5673abad9acf69997fdb11a3cdd3b5c1f50bf4cf96aeddbc99",
+      "data_sha256": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+      "load_seconds": 0.5779999999795109,
+      "fit_seconds": 3.187000000034459,
+      "process_peak_working_set_bytes_at_fit_end": 531120128,
+      "process_peak_pagefile_bytes_at_fit_end": 918974464,
+      "model_sha256_canonical": "f1fa27ed3c147a15113e5deb90891f1ffe3ca2a9099230381090118fae03df91",
+      "prediction_sha256_canonical": "01754c3a4aac8c9de0af18e62a46b125d1c01708c8bb8d7f371397f40e3e2b4f",
+      "prediction_count": 5000
+    },
+    "full-candidate": {
+      "status": "completed",
+      "pid": 30432,
+      "users": 50000,
+      "source_sha256": "3e8c6f0f5d3ff1565d3d2fb84a1bdac98563f076c1fcad57c4b892cfa7f1c9ff",
+      "data_sha256": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+      "load_seconds": 0.5469999999622814,
+      "fit_seconds": 14.51500000001397,
+      "process_peak_working_set_bytes_at_fit_end": 364986368,
+      "process_peak_pagefile_bytes_at_fit_end": 751390720,
+      "model_sha256_canonical": "62e1a3e021550e9497f255fa0a6a924e90a05773c184b0a375e866b85411bfa4",
+      "prediction_sha256_canonical": "53fe1483f238986dabd2425c1d002c7221341f86548a0532d91a60a7d88f1d06",
+      "prediction_count": 50000
+    }
+  },
+  "startup": {
+    "database_mode": "disabled; in-memory feedback",
+    "startup_deadline_seconds": 120,
+    "business_deadline_seconds": 60,
+    "port": 54022,
+    "status": "completed",
+    "launcher_pid": 1860,
+    "ready_seconds": 19.780999999959022,
+    "ready": {
+      "status": "ready",
+      "checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "error": null
+    },
+    "server": {
+      "pid": 29760,
+      "source_path": "E:\\searchPilot\\src\\searchpilot\\__init__.py",
+      "factory_seconds": 18.43800000002375
+    },
+    "final_ready": {
+      "status": "ready",
+      "checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "error": null
+    },
+    "exit_code": 0,
+    "shutdown": "graceful",
+    "port_closed": true,
+    "requests_attempted": 8,
+    "requests_completed": 8,
+    "elapsed_seconds": 37.01499999995576
+  },
+  "requests": [
+    {
+      "label": "search_bm25",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.0
+    },
+    {
+      "label": "search_vector",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 13.453000000037719
+    },
+    {
+      "label": "search_hybrid",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.030999999959021807
+    },
+    {
+      "label": "search_ltr",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.06300000002374873
+    },
+    {
+      "label": "recommend_existing_user",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.01600000000325963
+    },
+    {
+      "label": "recommend_unknown_user",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.0
+    },
+    {
+      "label": "ctr",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.015000000013969839
+    },
+    {
+      "label": "experiment",
+      "status": "completed",
+      "http_status": 200,
+      "elapsed_seconds": 0.0
+    }
+  ],
+  "boundaries": {
+    "full_baseline_this_round": "UNRUN",
+    "llm_requests": 0,
+    "full_factory_database": "disabled",
+    "memory_scope": "process lifetime peak sampled at end of fit, includes input loading; before model serialization and prediction validation",
+    "business_timeout": "httpx 60 seconds per phase, not an overall response deadline",
+    "fit_subset": "first 5000 users in loaded Parquet order, full file read before slicing",
+    "comparison": "canonical model JSON and per-user top10 predictions, not raw JSON bytes"
+  },
+  "inputs_sha256": {
+    "data/processed/d3a904f41240/user_history.parquet": "da65f4c746c447c39880e1a6e06cb8261f17edecc07c78521d2c1999bd34fa55",
+    "data/processed/d3a904f41240/impressions.parquet": "9bcabb3e494f5b1a9e84eff28c670ca45d5dfdb74f4d2ac2abaf6575d0dea4cb",
+    "data/queries/labels.csv": "f962a93707aa3136975b41b496184de02cb0c50c8f917b5c240b8b196cf256b8",
+    "artifacts/search/bm25/index.json": "391aacb71b17f6d537f9122069b74d9eba1f89a21795f8f9cbf8e0e378ff136e",
+    "artifacts/search/bm25/meta.json": "26b6236acdedfc5c676fff9893193bf31af0af519be01dc4e20607d66e6905b7",
+    "artifacts/search/eval/search_eval_test_bm25-4f46b3d8.json": "31c2b820ced04e6fce8aae5f83b3bda5a8a9db2276a26ef1fb0954d8a2968028",
+    "artifacts/search/eval/search_eval_test_bm25-4f46b3d8.md": "cd0fc87272374b767ac881b9d7dbd83b4eb7a83ccf4e5208325d585d421e6725",
+    "artifacts/search/eval/search_mode_compare_test.md": "fd185716e87e83524eaf9b85ac69db3ee5ae366642392c9d8b7ecdcf34fb905f",
+    "artifacts/search/ltr/meta.json": "d1b05d7dac0aa0e37608bb44d831d839110f00bc5c630345391cc577fc576a58",
+    "artifacts/search/ltr/popularity.json": "34c96147f1e0046a04dccbe58a613dc2d590553448f12d0213b7d786942166d9",
+    "artifacts/search/ltr/weights.json": "e58b8f3e229ecb19ff1f61bb57161ce3d815ab612fa3aab855d732fd52636710",
+    "artifacts/search/vector/embeddings.npy": "2f1dcc8652429e97b1c169c1c3dc3f949e403fecb0d2e294e51f005b8b393081",
+    "artifacts/search/vector/ids.json": "fa5c85d26a4639be1f90ab6ced3f96b51fbca0664c5f93978e6f2ec84d93c791",
+    "artifacts/search/vector/meta.json": "cb978e3a43c112b189b0db305128742ca39a8242323b93e1730698ff89358fd6",
+    "artifacts/ctr/calibrators.json": "95fbae95097639e16cbfccf8a75ca63f788d5dae28391bbf57bd5117cf7c7586",
+    "artifacts/ctr/feature_tables.json": "d00720a572d9504fc33aac5ec9f5dbac629e1a058d2c7440bd8609dced74f7e6",
+    "artifacts/ctr/lr.json": "08ecee8991db378b3b5bcbf4e235fa6eaed103404289f3050e0b39cd2b1689ad",
+    "artifacts/ctr/meta.json": "fcaaa512d07f3432234e5cc22bdc4f6ac6e92ed1fd5a9b347250e87baa716464",
+    "artifacts/ctr/metrics.json": "6e08a0e9e5d4e1f2d8076faa47d852b31e4e52623d5d7670ce6c970983306635",
+    "artifacts/ctr/mlp.json": "a4ca0cf251c128fc59b7fc7c3f94f252bede781000b6c240beca311575654096",
+    "artifacts/ctr/temperature.json": "2fab04928852a2eed976d6dab8826509005d68516d78f977d2cde1f3ddae6918",
+    "artifacts/ctr/test_scores.parquet": "2cd8f6d74b5a3b48faea58072ed1308e5346b1685168597d186c59770992ba5f",
+    "artifacts/experiments/registry.json": "e9152b1716eeda65ca623c0370f21bd80c108285a7eb22f3b58660893ee585bc"
+  }
+}
