@@ -1,6 +1,6 @@
 """抽样训练 CTR：LR 与 MLP，校准器只拟合 val。
 
-train 曝光随机抽样。dev 按 shown_at 中位数切成 val / test。
+train 曝光随机抽样。dev 按接近行数均分的完整 shown_at 时间组切成 val / test，不拆分曝光。
 种子 20261009。不用 test 选择超参。
 """
 
@@ -42,6 +42,7 @@ from searchpilot.ctr.model import (
     predict_logits,
     train_binary,
 )
+from searchpilot.ctr.split import split_dev_by_time
 
 TRAIN_N = 200_000
 VAL_N = 50_000
@@ -147,10 +148,10 @@ def load_split_features(data_dir: Path) -> tuple[object, ...]:
 
     rng = np.random.default_rng(SEED)
     train_rows = _sample_split(impressions.loc[impressions["split"] == "train"], TRAIN_N, rng)
-    dev = impressions.loc[impressions["split"] == "dev"].sort_values("shown_at", kind="mergesort")
-    mid = len(dev) // 2
-    val_rows = _sample_split(dev.iloc[:mid], VAL_N, rng)
-    test_rows = _sample_split(dev.iloc[mid:], TEST_N, rng)
+    dev = impressions.loc[impressions["split"] == "dev"]
+    val_partition, test_partition = split_dev_by_time(dev)
+    val_rows = _sample_split(val_partition, VAL_N, rng)
+    test_rows = _sample_split(test_partition, TEST_N, rng)
 
     def matrix_of(
         frame: pd.DataFrame,
@@ -395,7 +396,8 @@ def write_report(report: dict[str, object], path: Path) -> None:
         "",
         f"数据版本 `{DATA_VERSION}`。种子 `{SEED}`。train / val / test 行数 "
         f"{rows['train']} / {rows['val']} / {rows['test']}。",
-        "dev 按 `shown_at` 中位数切开，前一半是 val，后一半是 test。校准器只在 val 上拟合。",
+        "dev 按接近行数均分的完整 `shown_at` 时间组切开，不拆分曝光；"
+        "先 val 后 test，再各自抽样。校准器只在 val 上拟合。",
         "物品点击只统计 train 且 clicked=1。用户历史来自 `user_history.parquet`。",
         "没有位置特征，CTR 受位置偏差影响，这是已知限制。",
         "线上默认校准器仍是温度缩放。Platt 与等渗回归只在这份对照里出现。",
