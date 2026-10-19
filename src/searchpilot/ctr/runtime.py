@@ -186,12 +186,24 @@ def _load_mlp(path: Path) -> dict[str, np.ndarray] | None:
     if not path.is_file():
         return None
     payload = _read_json(path)
-    return {
-        "w1": np.asarray(payload["w1"], dtype=np.float64),
-        "b1": np.asarray(payload["b1"], dtype=np.float64),
-        "w2": np.asarray(payload["w2"], dtype=np.float64),
-        "b2": np.asarray(payload["b2"], dtype=np.float64),
-    }
+    try:
+        weights = {
+            name: np.asarray(payload[name], dtype=np.float64) for name in ("w1", "b1", "w2", "b2")
+        }
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise CtrNotReadyError("MLP weights must contain numeric w1, b1, w2 and b2") from exc
+    w1 = weights["w1"]
+    if w1.ndim != 2 or w1.shape[0] == 0 or w1.shape[1] != FEATURE_WIDTH:
+        raise CtrNotReadyError(f"MLP w1 must have shape (H, {FEATURE_WIDTH}) with H > 0")
+    hidden_width = w1.shape[0]
+    expected_shapes = {"b1": (hidden_width,), "w2": (1, hidden_width), "b2": (1,)}
+    for name, shape in expected_shapes.items():
+        if weights[name].shape != shape:
+            raise CtrNotReadyError(f"MLP {name} must have shape {shape}")
+    for name, values in weights.items():
+        if not np.all(np.isfinite(values)):
+            raise CtrNotReadyError(f"MLP {name} must be finite")
+    return weights
 
 
 def _read_json(path: Path) -> dict[str, Any]:
