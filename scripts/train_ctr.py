@@ -43,6 +43,7 @@ from searchpilot.ctr.model import (
     train_binary,
 )
 from searchpilot.ctr.split import split_dev_by_time
+from searchpilot.ctr.temporal_features import FEATURE_POLICY, training_features
 
 TRAIN_N = 200_000
 VAL_N = 50_000
@@ -115,7 +116,6 @@ def load_split_features(data_dir: Path) -> tuple[object, ...]:
     items = pq.read_table(
         root / "items.parquet", columns=["item_id", "title", "category"]
     ).to_pandas()
-    history = pq.read_table(root / "user_history.parquet").to_pandas()
 
     item_category = dict(
         zip(items["item_id"].astype(str), items["category"].astype(str), strict=True)
@@ -124,26 +124,31 @@ def load_split_features(data_dir: Path) -> tuple[object, ...]:
         str(item_id): len(str(title))
         for item_id, title in zip(items["item_id"], items["title"], strict=True)
     }
-    train_clicks = impressions.loc[
-        (impressions["split"] == "train") & (impressions["clicked"] == 1), "item_id"
-    ]
-    item_clicks = train_clicks.astype(str).value_counts().astype(int).to_dict()
-
-    user_history_len: dict[str, int] = {}
-    user_category_counts: dict[str, dict[str, int]] = {}
-    for row in history.itertuples(index=False):
-        user_id = str(row.user_id)
-        past = [str(item) for item in list(row.history)]
-        user_history_len[user_id] = len(past)
-        counts: dict[str, int] = {}
-        for item_id in past:
-            category = item_category.get(item_id, "")
-            counts[category] = counts.get(category, 0) + 1
-        user_category_counts[user_id] = counts
-
-    rng = np.random.default_rng(SEED)
-    train_rows = _sample_split(impressions.loc[impressions["split"] == "train"], TRAIN_N, rng)
+    train = impressions.loc[impressions["split"] == "train"].reset_index(drop=True).copy()
+    train["ctr_row_id"] = np.arange(len(train))
     dev = impressions.loc[impressions["split"] == "dev"]
+    train_times = pd.to_datetime(train["shown_at"], utc=True, errors="raise")
+    dev_times = pd.to_datetime(dev["shown_at"], utc=True, errors="raise")
+    if (
+        train.empty
+        or dev.empty
+        or train_times.isna().any()
+        or dev_times.isna().any()
+        or train_times.max() >= dev_times.min()
+    ):
+        raise ValueError("all training events must precede the dev time window")
+    rng = np.random.default_rng(SEED)
+    train_rows = _sample_split(train, TRAIN_N, rng)
+    x_train, tables = training_features(
+        train,
+        train_rows["ctr_row_id"].tolist(),
+        item_category=item_category,
+        item_title_chars=item_title_chars,
+    )
+    y_train = train_rows["clicked"].to_numpy(dtype=np.int64)
+    item_clicks = tables["item_clicks"]
+    user_history_len = tables["user_history_len"]
+    user_category_counts = tables["user_category_counts"]
     val_partition, test_partition = split_dev_by_time(dev)
     val_rows = _sample_split(val_partition, VAL_N, rng)
     test_rows = _sample_split(test_partition, TEST_N, rng)
@@ -166,7 +171,6 @@ def load_split_features(data_dir: Path) -> tuple[object, ...]:
         popularity = np.array([int(item_clicks.get(item, 0)) for item in item_ids], dtype=np.int64)
         return raw, frame["clicked"].to_numpy(dtype=np.int64), history_len, popularity
 
-    x_train, y_train, _h_train, _p_train = matrix_of(train_rows)
     x_val, y_val, _h_val, _p_val = matrix_of(val_rows)
     x_test, y_test, h_test, p_test = matrix_of(test_rows)
     return (
@@ -239,6 +243,7 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
             "mean": [float(v) for v in mean],
             "std": [float(v) for v in std],
             "data_version": DATA_VERSION,
+            "feature_policy": FEATURE_POLICY,
             "seed": SEED,
             "train_rows": int(len(train_rows)),
             "val_rows": int(len(val_rows)),
@@ -278,6 +283,7 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
     iso_block = _metrics_block("mlp_isotonic", y_test, iso_test)
     lr_block = _metrics_block("lr", y_test, lr_prob)
     report = {
+        "feature_policy": FEATURE_POLICY,
         "model_version": model_version,
         "calibrator_version": calibrator_version,
         "temperature": temperature,
@@ -373,7 +379,10 @@ def write_report(report: dict[str, object], path: Path) -> None:
         f"{rows['train']} / {rows['val']} / {rows['test']}。",
         "dev 按接近行数均分的完整 `shown_at` 时间组切开，不拆分曝光；"
         "先 val 后 test，再各自抽样。校准器只在 val 上拟合。",
-        "物品点击只统计 train 且 clicked=1。用户历史来自 `user_history.parquet`。",
+        "训练特征仅使用严格早于当前曝光时间的 train 正反馈；同一时间戳共享冻结前缀。",
+        "用户历史从观测窗口起点累积，不回填 `user_history.parquet` 的最终历史。",
+        "val/test 与线上使用训练窗口结束时冻结的计数，不使用 dev 标签。",
+        "此协议改变了历史特征定义，旧报告指标不能直接作为本轮结果。",
         "没有位置特征，CTR 受位置偏差影响，这是已知限制。",
         "线上默认校准器仍是温度缩放。Platt 与等渗回归只在这份对照里出现。",
         "",
