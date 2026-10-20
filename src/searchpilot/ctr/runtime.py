@@ -11,6 +11,8 @@ from typing import Any, Final
 
 import numpy as np
 
+from searchpilot.ctr.artifacts import read_bundle
+
 FEATURE_NAMES: Final[tuple[str, ...]] = (
     "log1p_history_len",
     "category_match_rate",
@@ -53,9 +55,19 @@ def load_ctr(artifact_dir: Path) -> CtrRuntime:
     if missing:
         raise CtrNotReadyError(f"CTR artifacts missing in {directory}: {', '.join(missing)}")
     try:
-        meta_doc = _read_json(paths[0])
-        lr_doc = _read_json(paths[1])
-        temperature_doc = _read_json(paths[2])
+        bundle = read_bundle(directory)
+        meta_doc = bundle["meta.json"] if bundle is not None else _read_json(paths[0])
+        lr_doc = bundle["lr.json"] if bundle is not None else _read_json(paths[1])
+        temperature_doc = bundle["temperature.json"] if bundle is not None else _read_json(paths[2])
+        if bundle is None and "artifact_schema" in meta_doc:
+            raise CtrNotReadyError("versioned CTR bundle requires manifest.json")
+        model_type = meta_doc.get("model_type")
+        if model_type not in (None, "lr", "mlp"):
+            raise CtrNotReadyError("unsupported CTR model_type")
+        legacy_training_export = "epochs" in meta_doc and "learning_rate" in meta_doc
+        requires_mlp = model_type == "mlp" or (model_type is None and legacy_training_export)
+        if bundle is None and requires_mlp and not (directory / "mlp.json").is_file():
+            raise CtrNotReadyError("MLP CTR artifact requires mlp.json; LR fallback is unsafe")
         names = [str(name) for name in meta_doc["feature_names"]]
         if names != list(FEATURE_NAMES):
             raise CtrNotReadyError(f"CTR feature_names must be {list(FEATURE_NAMES)}")
@@ -70,11 +82,21 @@ def load_ctr(artifact_dir: Path) -> CtrRuntime:
         calibrator_version = str(meta_doc["calibrator_version"]).strip()
         if not model_version or not calibrator_version:
             raise CtrNotReadyError("model_version and calibrator_version must be non-empty")
-        tables = _load_feature_tables(directory / "feature_tables.json")
-        mlp = _load_mlp(directory / "mlp.json")
+        tables = (
+            _parse_feature_tables(bundle["feature_tables.json"])
+            if bundle is not None
+            else _load_feature_tables(directory / "feature_tables.json")
+        )
+        mlp = (
+            _parse_mlp(bundle["mlp.json"])
+            if bundle is not None
+            else (None if model_type == "lr" else _load_mlp(directory / "mlp.json"))
+        )
+        if bundle is None and (directory / "manifest.json").exists():
+            raise CtrNotReadyError("CTR bundle changed during legacy load; retry after publication")
     except CtrNotReadyError:
         raise
-    except (KeyError, TypeError, ValueError, OSError) as exc:
+    except (KeyError, TypeError, ValueError, OverflowError, OSError) as exc:
         raise CtrNotReadyError(f"CTR artifacts in {directory} are corrupt: {exc}") from exc
     return CtrRuntime(
         model_version=model_version,
@@ -163,7 +185,10 @@ class CtrRuntime:
 def _load_feature_tables(path: Path) -> dict[str, object] | None:
     if not path.is_file():
         return None
-    payload = _read_json(path)
+    return _parse_feature_tables(_read_json(path))
+
+
+def _parse_feature_tables(payload: dict[str, Any]) -> dict[str, object]:
     return {
         "item_clicks": {str(k): int(v) for k, v in dict(payload.get("item_clicks", {})).items()},
         "item_category": {
@@ -185,7 +210,10 @@ def _load_feature_tables(path: Path) -> dict[str, object] | None:
 def _load_mlp(path: Path) -> dict[str, np.ndarray] | None:
     if not path.is_file():
         return None
-    payload = _read_json(path)
+    return _parse_mlp(_read_json(path))
+
+
+def _parse_mlp(payload: dict[str, Any]) -> dict[str, np.ndarray]:
     try:
         weights = {
             name: np.asarray(payload[name], dtype=np.float64) for name in ("w1", "b1", "w2", "b2")
