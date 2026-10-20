@@ -7,7 +7,6 @@ train 曝光随机抽样。dev 按接近行数均分的完整 shown_at 时间组
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,6 +15,7 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+from searchpilot.ctr.artifacts import export_bundle
 from searchpilot.ctr.calibrate import (
     apply_isotonic,
     apply_platt,
@@ -59,11 +59,6 @@ def _sample_split(frame: pd.DataFrame, size: int, rng: np.random.Generator) -> p
 
 def _json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def _version(payload: object) -> str:
-    blob = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(blob).hexdigest()[:8]
 
 
 def _metrics_block(name: str, labels: np.ndarray, probabilities: np.ndarray) -> dict[str, object]:
@@ -236,24 +231,10 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
     iso_test = apply_isotonic(raw_test, iso_x, iso_y)
     lr_prob = 1.0 / (1.0 + np.exp(-np.clip(lr_test, -60, 60)))
 
-    version_payload = {
-        "bias": lr_w.bias,
-        "mean": [float(v) for v in mean],
-        "mlp_b1": mlp_w.b1,
-        "std": [float(v) for v in std],
-        "temperature": temperature,
-        "weight": lr_w.weight,
-    }
-    model_version = "ctr-" + _version(version_payload)
-    calibrator_version = "temperature-" + _version({"T": temperature})
-
     out = artifact_dir / "ctr"
-    out.mkdir(parents=True, exist_ok=True)
-    _json(
-        out / "meta.json",
-        {
-            "model_version": model_version,
-            "calibrator_version": calibrator_version,
+    model_version, calibrator_version = export_bundle(
+        out,
+        meta={
             "feature_names": list(FEATURE_NAMES),
             "mean": [float(v) for v in mean],
             "std": [float(v) for v in std],
@@ -265,29 +246,23 @@ def train(data_dir: Path, artifact_dir: Path) -> dict[str, object]:
             "epochs": EPOCHS,
             "learning_rate": LEARNING_RATE,
         },
+        lr={"weight": lr_w.weight, "bias": lr_w.bias},
+        mlp={"w1": mlp_w.w1, "b1": mlp_w.b1, "w2": mlp_w.w2, "b2": mlp_w.b2},
+        temperature=temperature,
+        feature_tables={
+            "item_clicks": {k: int(v) for k, v in item_clicks.items()},
+            "item_category": item_category,
+            "item_title_chars": {k: int(v) for k, v in item_title_chars.items()},
+            "user_history_len": {k: int(v) for k, v in user_history_len.items()},
+            "user_category_counts": user_category_counts,
+        },
     )
-    _json(out / "lr.json", {"weight": lr_w.weight, "bias": lr_w.bias})
-    _json(
-        out / "mlp.json",
-        {"w1": mlp_w.w1, "b1": mlp_w.b1, "w2": mlp_w.w2, "b2": mlp_w.b2},
-    )
-    _json(out / "temperature.json", {"T": temperature})
     _json(
         out / "calibrators.json",
         {
             "temperature": temperature,
             "platt": {"coef": platt_coef, "intercept": platt_intercept},
             "isotonic": {"x": iso_x, "y": iso_y},
-        },
-    )
-    _json(
-        out / "feature_tables.json",
-        {
-            "item_clicks": {k: int(v) for k, v in item_clicks.items()},
-            "item_category": item_category,
-            "item_title_chars": {k: int(v) for k, v in item_title_chars.items()},
-            "user_history_len": {k: int(v) for k, v in user_history_len.items()},
-            "user_category_counts": user_category_counts,
         },
     )
     scores = test_rows[["impression_id", "user_id", "item_id", "clicked"]].copy()
