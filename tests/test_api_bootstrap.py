@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -69,3 +71,27 @@ def test_lifespan_runs_closers() -> None:
 def test_create_app_signature_is_keyword_only() -> None:
     with pytest.raises(TypeError):
         bootstrap.create_app(None)  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_default_app_passes_vector_warmup_setting_to_search_factory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fakes: SimpleNamespace, enabled: bool
+) -> None:
+    monkeypatch.setenv("SEARCHPILOT_ARTIFACT_DIR", str(tmp_path))
+    monkeypatch.setenv("SEARCHPILOT_VECTOR_WARMUP", str(enabled).lower())
+    search = fakes.FakeSearch()
+    calls: list[tuple[Path, bool]] = []
+
+    def build_search(root: Path, *, warmup_vector: bool = False) -> object:
+        calls.append((root, warmup_vector))
+        return search
+
+    def fake_attr(module: str, name: str) -> object:
+        if (module, name) == ("searchpilot.search.service", "build_search_service"):
+            return build_search
+        raise ImportError("optional fixture component")
+
+    monkeypatch.setattr(bootstrap, "_attr", fake_attr)
+    app = bootstrap.build_default_app()
+    assert app.state.search is search
+    assert calls == [(tmp_path, enabled)]

@@ -32,7 +32,8 @@ COPY db ./db
 COPY scripts ./scripts
 
 ENV SEARCHPILOT_DATA_DIR=/app/data \
-    SEARCHPILOT_ARTIFACT_DIR=/app/artifacts
+    SEARCHPILOT_ARTIFACT_DIR=/app/artifacts \
+    SEARCHPILOT_VECTOR_WARMUP=true
 
 EXPOSE 8000
 

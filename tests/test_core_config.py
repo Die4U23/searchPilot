@@ -13,6 +13,7 @@ def test_defaults() -> None:
     assert s.database_url is None
     assert s.data_dir == Path("./data")
     assert s.artifact_dir == Path("./artifacts")
+    assert s.vector_warmup is False
     assert s.data_version is None
     assert s.max_query_chars == 256
     assert s.max_limit == 100
@@ -72,3 +73,17 @@ def test_get_settings_is_cached_and_clearable(monkeypatch: pytest.MonkeyPatch) -
     assert get_settings().max_limit == 7
     get_settings.cache_clear()
     assert get_settings() is not first
+
+
+@pytest.mark.parametrize("value,expected", [("true", True), ("1", True), ("false", False)])
+def test_vector_warmup_env_override(
+    monkeypatch: pytest.MonkeyPatch, value: str, expected: bool
+) -> None:
+    monkeypatch.setenv("SEARCHPILOT_VECTOR_WARMUP", value)
+    assert Settings().vector_warmup is expected
+
+
+def test_vector_warmup_invalid_env_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SEARCHPILOT_VECTOR_WARMUP", "sometimes")
+    with pytest.raises(ValidationError):
+        Settings()

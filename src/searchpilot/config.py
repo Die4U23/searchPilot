@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     api_token: str | None = None
     data_dir: Path = Path("./data")
     artifact_dir: Path = Path("./artifacts")
+    vector_warmup: bool = False
     data_version: str | None = None
     max_query_chars: int = Field(default=256, ge=1)
     max_limit: int = Field(default=100, ge=1)

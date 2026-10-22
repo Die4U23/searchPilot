@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-22",
+  "base_commit": "2a47ed18abd14a341cb7be20cf19b04c64d90d11",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]",
+  "scope": "single-worker default app; database disabled; offline model cache; cold process, warm filesystem cache",
+  "startup_deadline_seconds": 120,
+  "search_total_deadline_seconds": 60,
+  "external_llm_calls": 0,
+  "search_requests_completed": 20,
+  "search_requests_attempted": 20,
+  "exact_responses_equal_excluding_request_id": true,
+  "response_sha256": "2b9b55cca64f6fb39c2ff6c743875bebcce85e64a1876781f6d5d15ee33f1a81",
+  "runs": [
+    {
+      "label": "a1",
+      "warmup": false,
+      "factory_seconds": 21.73400000000038,
+      "ready_seconds": 22.820311199999196,
+      "first_vector_seconds": 9.382175799999459,
+      "ready_plus_first_vector_seconds": 32.202486999998655,
+      "request_seconds": [
+        9.382175799999459,
+        0.04352570000082778,
+        0.008621999999377294,
+        0.059227400000963826,
+        0.07368780000069819
+      ],
+      "ready_checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "exit_code": 0,
+      "port_closed": true
+    },
+    {
+      "label": "b1",
+      "warmup": true,
+      "factory_seconds": 31.718000000000757,
+      "ready_seconds": 32.529660299998795,
+      "first_vector_seconds": 0.08647790000031819,
+      "ready_plus_first_vector_seconds": 32.616138199999114,
+      "request_seconds": [
+        0.08647790000031819,
+        0.08433530000002065,
+        0.010679200000595301,
+        0.10813909999887983,
+        0.10128199999962817
+      ],
+      "ready_checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "exit_code": 0,
+      "port_closed": true
+    },
+    {
+      "label": "b2",
+      "warmup": true,
+      "factory_seconds": 34.96900000000096,
+      "ready_seconds": 36.35904660000051,
+      "first_vector_seconds": 0.04951769999934186,
+      "ready_plus_first_vector_seconds": 36.40856429999985,
+      "request_seconds": [
+        0.04951769999934186,
+        0.046305100000608945,
+        0.007394899999781046,
+        0.051610800001071766,
+        0.07063240000024962
+      ],
+      "ready_checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "exit_code": 0,
+      "port_closed": true
+    },
+    {
+      "label": "a2",
+      "warmup": false,
+      "factory_seconds": 24.313000000000102,
+      "ready_seconds": 25.227655900000173,
+      "first_vector_seconds": 8.252705100001549,
+      "ready_plus_first_vector_seconds": 33.48036100000172,
+      "request_seconds": [
+        8.252705100001549,
+        0.041734899999937625,
+        0.006223899999895366,
+        0.04845550000027288,
+        0.05789399999957823
+      ],
+      "ready_checks": {
+        "search": true,
+        "recommend": true,
+        "feedback": true,
+        "vector_index": true,
+        "ltr": true,
+        "ctr": true
+      },
+      "exit_code": 0,
+      "port_closed": true
+    }
+  ],
+  "means": {
+    "false": {
+      "ready_seconds": 24.023983549999684,
+      "first_vector_seconds": 8.817440450000504
+    },
+    "true": {
+      "ready_seconds": 34.44435344999965,
+      "first_vector_seconds": 0.06799779999983002
+    }
+  },
+  "raw_zip": {
+    "path": "vector-startup-2026-10-22-raw.zip",
+    "bytes": 33614,
+    "sha256": "ada4659a553f3b60cb787314e0e60a7a342d830b9f958e28dd7ce7f1dde4a8d5",
+    "members": 23
+  }
+}

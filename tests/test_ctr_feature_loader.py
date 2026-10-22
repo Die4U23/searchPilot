@@ -50,7 +50,7 @@ def load_fixture(labels: list[int]) -> tuple:
         return SimpleNamespace(to_pandas=lambda: table.copy())
 
     source = Path(__file__).resolve().parents[1] / "scripts" / "train_ctr.py"
-    tree = ast.parse(source.read_text())
+    tree = ast.parse(source.read_text(encoding="utf-8"))
     module = ast.Module(
         body=[
             node

@@ -112,6 +112,8 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 配置全部来自环境变量，见 [`.env.example`](.env.example)（前缀 `SEARCHPILOT_`）。
 
+Docker/Compose 默认设置 `SEARCHPILOT_VECTOR_WARMUP=true`，在监听请求前加载向量模型并完成一次编码，避免把初始化延迟留给首个搜索请求。这会增加启动等待时间；预热失败时 BM25 仍可调用，`/health/ready` 返回 503，向量、混合与 LTR 搜索不可用，修复后需重启。容器健康检查仍检查 `/health/live`；流量准入应检查 `/health/ready`。直接运行 Python 默认不预热，可通过同名环境变量开启（Settings 不自动读取 `.env`）。
+
 ## 目录结构
 
 ```text

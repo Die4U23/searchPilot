@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Final
@@ -65,6 +66,7 @@ SUPPORTED_MODES: Final[frozenset[str]] = frozenset({"bm25"})
 KNOWN_MODES: Final[frozenset[str]] = frozenset({"bm25", "vector", "hybrid", "ltr"})
 SUPPORTED_FILTER_KEYS: Final[frozenset[str]] = frozenset({"category"})
 FUSION_DEPTH: Final[int] = 100
+logger = logging.getLogger(__name__)
 
 
 class BM25SearchService:
@@ -477,20 +479,35 @@ def load_bm25_service(artifact_dir: Path) -> BM25SearchService:
     return service_from_artifacts(index, meta)
 
 
-def build_search_service(artifact_dir: Path) -> SearchPort:
+def build_search_service(artifact_dir: Path, *, warmup_vector: bool = False) -> SearchPort:
     """契约工厂：从 ``artifact_dir/search/bm25/`` 加载索引并返回 ``SearchPort``。
 
     缺 BM25 产物或产物损坏时抛 :class:`SearchNotReadyError`。若同级
     ``search/vector/meta.json`` 存在，则挂上向量索引；向量文件损坏同样抛错。
     若 ``search/ltr/meta.json`` 存在，则挂上 LTR 产物。
+    默认保持懒加载；显式预热会先编码一条固定查询。预热失败时保留 BM25，
+    本实例不挂载向量索引；LTR 产物仍照常加载，但 LTR 查询也需要向量索引。
     """
     service = load_bm25_service(artifact_dir)
     vector_dir = Path(artifact_dir) / "search" / "vector"
     if (vector_dir / "meta.json").is_file():
         index = load_vector_index(vector_dir)
-        service.attach_vector_index(
-            index, SentenceTransformerQueryEncoder(index.meta.model_name, index.meta.query_prefix)
-        )
+        encoder = SentenceTransformerQueryEncoder(index.meta.model_name, index.meta.query_prefix)
+        try:
+            if warmup_vector:
+                vector = encoder("search warmup")
+                if (
+                    vector.shape != (index.meta.dim,)
+                    or not np.isfinite(vector).all()
+                    or not np.any(vector != 0)
+                ):
+                    raise ValueError("invalid query vector during warmup")
+        except Exception as exc:
+            logger.warning(
+                "vector warmup failed (%s); starting without vector search", type(exc).__name__
+            )
+        else:
+            service.attach_vector_index(index, encoder)
     ltr_dir = ltr_artifact_dir(Path(artifact_dir))
     if (ltr_dir / "meta.json").is_file():
         service.attach_ltr(load_ltr(ltr_dir))
