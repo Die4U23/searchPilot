@@ -109,6 +109,7 @@
 | `SEARCHPILOT_DATABASE_URL` | 无 | 未设置时使用内存实现，`/health/ready` 的 `database` 检查项不出现 |
 | `SEARCHPILOT_DATA_DIR` | `./data` | |
 | `SEARCHPILOT_ARTIFACT_DIR` | `./artifacts` | |
+| `SEARCHPILOT_VECTOR_WARMUP` | Python `false`；Docker/Compose `true` | 启动时完成一次向量编码；失败时 BM25 可用，向量未就绪 |
 | `SEARCHPILOT_DATA_VERSION` | 无 | 指定加载哪个 `processed/<data_version>`；未设置取目录中唯一的一个 |
 | `SEARCHPILOT_MAX_QUERY_CHARS` | `256` | |
 | `SEARCHPILOT_MAX_LIMIT` | `100` | |

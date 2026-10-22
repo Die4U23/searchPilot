@@ -112,7 +112,9 @@ def build_default_app() -> FastAPI:
 
     search: SearchPort | None = _load(
         "search service",
-        lambda: _attr("searchpilot.search.service", "build_search_service")(settings.artifact_dir),
+        lambda: _attr("searchpilot.search.service", "build_search_service")(
+            settings.artifact_dir, warmup_vector=settings.vector_warmup
+        ),
     )
     recommend: RecommendPort | None = _load(
         "recommend service",
