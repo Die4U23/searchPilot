@@ -12,7 +12,13 @@ from typing import Any
 
 import pytest
 from scripts import bench_concurrent
-from scripts.bench_concurrent import Config, latency_summary, run_mode
+from scripts.bench_concurrent import (
+    Config,
+    latency_summary,
+    run_mixed_duration,
+    run_mode,
+    summarize,
+)
 
 Handler = Callable[[dict[str, str], dict[str, Any], asyncio.StreamWriter], Awaitable[None]]
 
@@ -244,6 +250,11 @@ async def test_connection_closed_before_headers_is_counted() -> None:
         {"warmup": -1},
         {"limit": 101},
         {"base_url": "https://user:secret@example.test"},
+        {"duration_seconds": 0},
+        {"duration_seconds": -1},
+        {"duration_seconds": 3601},
+        {"duration_seconds": float("inf")},
+        {"duration_seconds": float("nan")},
     ],
 )
 def test_invalid_limits_rejected(kwargs: dict[str, Any]) -> None:
@@ -263,7 +274,10 @@ def cli_paths(tmp_path: Path) -> tuple[Path, Path]:
     return queries, tmp_path / "result.json"
 
 
-def test_cli_refuses_existing_output_before_requests(tmp_path: Path, monkeypatch) -> None:
+@pytest.mark.parametrize("duration_args", [[], ["--duration-seconds", "0.1"]])
+def test_cli_refuses_existing_output_before_requests(
+    tmp_path: Path, monkeypatch, duration_args
+) -> None:
     queries, out = cli_paths(tmp_path)
     out.write_text("original failure evidence", encoding="utf-8")
     monkeypatch.setattr(bench_concurrent, "code_metadata", lambda root: {})
@@ -272,8 +286,9 @@ def test_cli_refuses_existing_output_before_requests(tmp_path: Path, monkeypatch
         pytest.fail("existing output must be rejected before sending requests")
 
     monkeypatch.setattr(bench_concurrent, "run_mode", unexpected)
+    monkeypatch.setattr(bench_concurrent, "run_mixed_duration", unexpected)
     with pytest.raises(SystemExit) as error:
-        bench_concurrent.main(["--queries", str(queries), "--out", str(out)])
+        bench_concurrent.main(["--queries", str(queries), "--out", str(out), *duration_args])
     assert error.value.code == 2
     assert out.read_text(encoding="utf-8") == "original failure evidence"
 
@@ -360,7 +375,8 @@ def test_cli_returns_failure_for_warmup_timeout(tmp_path: Path, monkeypatch) -> 
     assert bench_concurrent.main(["--queries", str(queries), "--out", str(out)]) == 1
 
 
-async def test_cancel_retains_completed_and_unknown_pending_requests(tmp_path: Path) -> None:
+@pytest.mark.parametrize("mixed", [False, True])
+async def test_cancel_retains_completed_and_unknown_pending_requests(tmp_path: Path, mixed) -> None:
     waiting = asyncio.Event()
 
     async def handler(headers, body, writer):
@@ -378,10 +394,11 @@ async def test_cancel_retains_completed_and_unknown_pending_requests(tmp_path: P
             file.flush()
 
         async with serve(handler) as url:
+            config = Config(url, 5, 1, 2, 0, duration_seconds=1 if mixed else None)
             task = asyncio.create_task(
-                run_mode(
-                    Config(url, 5, 1, 2, 0), "bm25", ["complete", "pending"], event_sink=record
-                )
+                run_mixed_duration(config, ["bm25"], ["complete", "pending"], event_sink=record)
+                if mixed
+                else run_mode(config, "bm25", ["complete", "pending"], event_sink=record)
             )
             await asyncio.wait_for(waiting.wait(), 2)
             task.cancel()
@@ -395,7 +412,8 @@ async def test_cancel_retains_completed_and_unknown_pending_requests(tmp_path: P
     assert events[2]["outcome"] == "pending"
 
 
-def test_cli_refuses_existing_ledger(tmp_path: Path, monkeypatch) -> None:
+@pytest.mark.parametrize("duration_args", [[], ["--duration-seconds", "0.1"]])
+def test_cli_refuses_existing_ledger(tmp_path: Path, monkeypatch, duration_args) -> None:
     queries, out = cli_paths(tmp_path)
     ledger_path = out.with_suffix(".requests.jsonl")
     ledger_path.write_text("pending request evidence", encoding="utf-8")
@@ -405,7 +423,152 @@ def test_cli_refuses_existing_ledger(tmp_path: Path, monkeypatch) -> None:
         pytest.fail("existing ledger must be rejected before requests")
 
     monkeypatch.setattr(bench_concurrent, "run_mode", unexpected)
+    monkeypatch.setattr(bench_concurrent, "run_mixed_duration", unexpected)
     with pytest.raises(SystemExit) as error:
-        bench_concurrent.main(["--queries", str(queries), "--out", str(out)])
+        bench_concurrent.main(["--queries", str(queries), "--out", str(out), *duration_args])
     assert error.value.code == 2
     assert ledger_path.read_text(encoding="utf-8") == "pending request evidence"
+
+
+def test_empty_summary_has_no_claimed_success_rate() -> None:
+    summary = summarize([], 0)
+    assert summary["total"] == summary["successes"] == summary["failures"] == 0
+    assert summary["success_rate"] is None
+    assert summary["timeout_rate"] is None
+    assert summary["completed_requests_per_second"] is None
+    assert summary["all_latency"]["p99_ms"] is None
+
+
+async def test_mixed_duration_concurrency_fair_queries_and_durable_offsets() -> None:
+    active = peak = 0
+    events = []
+
+    async def handler(headers, body, writer):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            await asyncio.sleep(0.01)
+            await respond(writer, headers, json.dumps(payload(headers, body)).encode())
+        finally:
+            active -= 1
+
+    modes = list(bench_concurrent.MODES)
+    queries = ["one", "two", "three", "four"]
+    async with serve(handler) as url:
+        report = await run_mixed_duration(
+            Config(url, requests=1, concurrency=4, warmup=1, duration_seconds=0.3),
+            modes,
+            queries,
+            event_sink=events.append,
+        )
+    records = report["requests"]
+    assert 1 < peak <= 4
+    assert len(records) >= 8  # Duration replaces the count of one.
+    assert len(report["warmup"]) == 4
+    assert report["summary"]["successes"] == len(records)
+    assert [row["index"] for row in records] == list(range(len(records)))
+    for index, row in enumerate(records):
+        assert row["mode"] == modes[index % len(modes)]
+        assert row["query"] == queries[(index // len(modes)) % len(queries)]
+        assert 0 <= row["dispatched_ms"] < 300
+    counts = [summary["total"] for summary in report["by_mode"].values()]
+    assert max(counts) - min(counts) <= 1
+    assert sum(counts) == len(records)
+    assert all(
+        summary["elapsed_seconds"] == report["summary"]["elapsed_seconds"]
+        for summary in report["by_mode"].values()
+    )
+    measured = [event for event in events if event["phase"] == "measured"]
+    assert len(measured) == len(records) * 2
+    for row in records:
+        pair = [event for event in measured if event["request_id"] == row["request_id"]]
+        assert [event["event"] for event in pair] == ["pending", "result"]
+        assert all(event["dispatched_ms"] == row["dispatched_ms"] for event in pair)
+
+
+async def test_mixed_duration_drains_inflight_after_dispatch_deadline() -> None:
+    calls = 0
+
+    async def handler(headers, body, writer):
+        nonlocal calls
+        calls += 1
+        await asyncio.sleep(0.15)
+        await respond(writer, headers, json.dumps(payload(headers, body)).encode())
+
+    async with serve(handler) as url:
+        report = await run_mixed_duration(
+            Config(url, concurrency=1, warmup=0, duration_seconds=0.08),
+            ["bm25", "vector"],
+            ["one"],
+        )
+    assert calls == report["summary"]["successes"] == 1
+    assert report["summary"]["elapsed_seconds"] >= 0.15
+    assert report["drain_seconds"] >= 0.07
+    assert report["last_dispatch_seconds"] < report["dispatch_window_seconds"] == 0.08
+    assert report["by_mode"]["vector"]["total"] == 0
+    assert report["by_mode"]["vector"]["success_rate"] is None
+
+
+async def test_mixed_duration_keeps_http_errors_and_total_timeouts() -> None:
+    async def handler(headers, body, writer):
+        if body["mode"] == "hybrid":
+            await asyncio.Event().wait()
+        else:
+            status = 503 if body["mode"] == "vector" else 200
+            await respond(writer, headers, json.dumps(payload(headers, body)).encode(), status)
+
+    async with serve(handler) as url:
+        report = await run_mixed_duration(
+            Config(url, concurrency=4, timeout=0.08, warmup=0, duration_seconds=0.25),
+            list(bench_concurrent.MODES),
+            ["one"],
+        )
+    summary = report["summary"]
+    assert summary["total"] == len(report["requests"])
+    assert summary["total"] == summary["successes"] + summary["failures"]
+    assert set(summary["outcomes"]) == {"success", "http_error", "timeout"}
+    assert report["by_mode"]["hybrid"]["timeout_rate"] == 1
+    assert report["by_mode"]["vector"]["success_rate"] == 0
+    assert summary["all_latency"]["count"] == summary["total"]
+
+
+async def test_cli_mixed_duration_records_method_and_warmup(tmp_path: Path, monkeypatch) -> None:
+    queries, out = cli_paths(tmp_path)
+    monkeypatch.setattr(bench_concurrent, "code_metadata", lambda root: {})
+
+    async def handler(headers, body, writer):
+        assert json.loads(out.read_text())["active_mode"] == "mixed"
+        await respond(writer, headers, json.dumps(payload(headers, body)).encode())
+
+    async with serve(handler) as url:
+        result = await asyncio.to_thread(
+            bench_concurrent.main,
+            [
+                "--base-url",
+                url,
+                "--queries",
+                str(queries),
+                "--out",
+                str(out),
+                "--duration-seconds",
+                "0.1",
+                "--warmup",
+                "1",
+                "--concurrency",
+                "2",
+                "--modes",
+                "bm25",
+                "vector",
+            ],
+        )
+    report = json.loads(out.read_text())
+    assert result == 0
+    assert report["status"] == "COMPLETED"
+    assert report["active_mode"] is None
+    assert "mixed" in report["method"]["workload"]
+    assert "--requests ignored" in report["method"]["duration"]
+    assert "every mode" in report["queries"]["order"]
+    assert len(report["runs"]) == 1
+    assert len(report["runs"][0]["warmup"]) == 2
+    assert set(report["runs"][0]["by_mode"]) == {"bm25", "vector"}

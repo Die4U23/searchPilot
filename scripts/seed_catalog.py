@@ -195,82 +195,88 @@ def upsert_catalog(
 ) -> dict[str, int]:
     pool = create_pool(database_url)
     try:
-        _executemany(
-            pool,
-            """
-            INSERT INTO queries (
-                query_id, query_text, normalized_text, query_type, split, source
+        # Queries are the startup completion sentinel: commit the whole catalog
+        # together, including every label/model/task/bid batch.
+        with pool.connection() as connection:
+            _executemany(
+                connection,
+                """
+                INSERT INTO queries (
+                    query_id, query_text, normalized_text, query_type, split, source
+                )
+                VALUES (%s, %s, %s, %s, %s, 'searchpilot')
+                ON CONFLICT (query_id) DO UPDATE SET
+                    query_text = EXCLUDED.query_text,
+                    normalized_text = EXCLUDED.normalized_text,
+                    query_type = EXCLUDED.query_type,
+                    split = EXCLUDED.split,
+                    source = EXCLUDED.source
+                """,
+                queries,
+                batch_size,
             )
-            VALUES (%s, %s, %s, %s, %s, 'searchpilot')
-            ON CONFLICT (query_id) DO UPDATE SET
-                query_text = EXCLUDED.query_text,
-                normalized_text = EXCLUDED.normalized_text,
-                query_type = EXCLUDED.query_type,
-                split = EXCLUDED.split,
-                source = EXCLUDED.source
-            """,
-            queries,
-            batch_size,
-        )
-        _executemany(
-            pool,
-            """
-            INSERT INTO relevance_labels (query_id, item_id, grade, annotator, source)
-            VALUES (%s, %s, %s, %s, 'searchpilot')
-            ON CONFLICT (query_id, item_id, annotator) DO UPDATE SET
-                grade = EXCLUDED.grade,
-                source = EXCLUDED.source
-            """,
-            labels,
-            batch_size,
-        )
-        _executemany(
-            pool,
-            """
-            INSERT INTO model_versions (
-                version, kind, artifact_uri, feature_version, sha256, metadata, source, source_ref
+            _executemany(
+                connection,
+                """
+                INSERT INTO relevance_labels (query_id, item_id, grade, annotator, source)
+                VALUES (%s, %s, %s, %s, 'searchpilot')
+                ON CONFLICT (query_id, item_id, annotator) DO UPDATE SET
+                    grade = EXCLUDED.grade,
+                    source = EXCLUDED.source
+                """,
+                labels,
+                batch_size,
             )
-            VALUES (%s, %s, %s, %s, %s, %s, 'searchpilot', %s)
-            ON CONFLICT (version) DO UPDATE SET
-                kind = EXCLUDED.kind,
-                artifact_uri = EXCLUDED.artifact_uri,
-                feature_version = EXCLUDED.feature_version,
-                sha256 = EXCLUDED.sha256,
-                metadata = EXCLUDED.metadata,
-                source = EXCLUDED.source,
-                source_ref = EXCLUDED.source_ref
-            """,
-            models,
-            batch_size,
-        )
-        task_rows = [(task["task_id"], task["question"], task["kind"], Json([])) for task in tasks]
-        _executemany(
-            pool,
-            """
-            INSERT INTO agent_tasks (task_id, question, kind, expected_tools, source)
-            VALUES (%s, %s, %s, %s, 'searchpilot')
-            ON CONFLICT (task_id) DO UPDATE SET
-                question = EXCLUDED.question,
-                kind = EXCLUDED.kind,
-                expected_tools = EXCLUDED.expected_tools,
-                source = EXCLUDED.source
-            """,
-            task_rows,
-            batch_size,
-        )
-        _executemany(
-            pool,
-            """
-            INSERT INTO bids (item_id, bid, distribution_version, source)
-            VALUES (%s, %s, %s, 'synthetic')
-            ON CONFLICT (item_id) DO UPDATE SET
-                bid = EXCLUDED.bid,
-                distribution_version = EXCLUDED.distribution_version,
-                source = EXCLUDED.source
-            """,
-            bids,
-            batch_size,
-        )
+            _executemany(
+                connection,
+                """
+                INSERT INTO model_versions (
+                    version, kind, artifact_uri, feature_version,
+                    sha256, metadata, source, source_ref
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, 'searchpilot', %s)
+                ON CONFLICT (version) DO UPDATE SET
+                    kind = EXCLUDED.kind,
+                    artifact_uri = EXCLUDED.artifact_uri,
+                    feature_version = EXCLUDED.feature_version,
+                    sha256 = EXCLUDED.sha256,
+                    metadata = EXCLUDED.metadata,
+                    source = EXCLUDED.source,
+                    source_ref = EXCLUDED.source_ref
+                """,
+                models,
+                batch_size,
+            )
+            task_rows = [
+                (task["task_id"], task["question"], task["kind"], Json([])) for task in tasks
+            ]
+            _executemany(
+                connection,
+                """
+                INSERT INTO agent_tasks (task_id, question, kind, expected_tools, source)
+                VALUES (%s, %s, %s, %s, 'searchpilot')
+                ON CONFLICT (task_id) DO UPDATE SET
+                    question = EXCLUDED.question,
+                    kind = EXCLUDED.kind,
+                    expected_tools = EXCLUDED.expected_tools,
+                    source = EXCLUDED.source
+                """,
+                task_rows,
+                batch_size,
+            )
+            _executemany(
+                connection,
+                """
+                INSERT INTO bids (item_id, bid, distribution_version, source)
+                VALUES (%s, %s, %s, 'synthetic')
+                ON CONFLICT (item_id) DO UPDATE SET
+                    bid = EXCLUDED.bid,
+                    distribution_version = EXCLUDED.distribution_version,
+                    source = EXCLUDED.source
+                """,
+                bids,
+                batch_size,
+            )
     finally:
         pool.close()
     return {
@@ -283,10 +289,10 @@ def upsert_catalog(
 
 
 def _executemany(
-    pool: Any, statement: str, rows: Sequence[tuple[Any, ...]], batch_size: int
+    connection: Any, statement: str, rows: Sequence[tuple[Any, ...]], batch_size: int
 ) -> None:
-    for batch in _batches(rows, batch_size):
-        with pool.connection() as connection, connection.cursor() as cursor:
+    with connection.cursor() as cursor:
+        for batch in _batches(rows, batch_size):
             cursor.executemany(statement, batch)
 
 
