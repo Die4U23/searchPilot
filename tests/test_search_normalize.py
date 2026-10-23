@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+
+from searchpilot.search import normalize
 from searchpilot.search.normalize import (
     STOPWORDS,
     analyze,
@@ -74,6 +80,48 @@ def test_stem_only_alphabetic_tokens() -> None:
         "n95",
         "3.5",
     ]
+    assert stem([]) == []
+
+
+def test_concurrent_stemming_matches_serial_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    batches = [
+        ["running", "studies", "u.s", "n95"],
+        ["cats", "relational", "covid-19"],
+        ["ponies", "happiness", "3.5"],
+        ["jumping", "friendships", "e-mail"],
+    ]
+    expected = [stem(tokens) for tokens in batches]
+    assert expected == [
+        ["run", "studi", "u.s", "n95"],
+        ["cat", "relat", "covid-19"],
+        ["poni", "happi", "3.5"],
+        ["jump", "friendship", "e-mail"],
+    ]
+    original_stem = normalize._STEMMER._stem
+
+    def yielding_stem() -> bool:
+        # Yield after Snowball set_current(), retaining its real algorithm and state.
+        # No rendezvous inside the protected operation: serialization must be safe.
+        time.sleep(0.003)
+        return original_stem()
+
+    monkeypatch.setattr(normalize._STEMMER, "_stem", yielding_stem)
+
+    def worker(tokens: list[str]) -> list[list[str]]:
+        return [stem(tokens) for _ in range(20)]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(worker, tokens) for tokens in batches]
+        actual = [future.result(timeout=5) for future in futures]
+    assert actual == [[result] * 20 for result in expected]
+
+
+def test_non_alphabetic_tokens_do_not_acquire_stemmer_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A non-context-manager sentinel fails if this branch attempts to take the lock.
+    monkeypatch.setattr(normalize, "_STEMMER_LOCK", None, raising=False)
+    assert stem(["u.s", "n95", "3.5", "covid-19"]) == ["u.s", "n95", "3.5", "covid-19"]
     assert stem([]) == []
 
 
