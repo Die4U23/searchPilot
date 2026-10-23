@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections.abc import Callable
+from threading import Lock
 
 import snowballstemmer
 
@@ -68,6 +69,7 @@ _TOKEN_RE = re.compile(r"\w+(?:[-.]\w+)*", re.UNICODE)
 _WHITESPACE_RE = re.compile(r"\s+")
 
 _STEMMER = snowballstemmer.stemmer("english")
+_STEMMER_LOCK = Lock()
 
 
 def normalize_query(text: str) -> str:
@@ -132,7 +134,10 @@ def stem(tokens: list[str]) -> list[str]:
             alpha_positions.append(pos)
             alpha_tokens.append(tok)
     if alpha_tokens:
-        for pos, stemmed in zip(alpha_positions, _STEMMER.stemWords(alpha_tokens), strict=True):
+        # Snowball mutates its current word and cursor even during read-only searches.
+        with _STEMMER_LOCK:
+            stemmed_tokens = _STEMMER.stemWords(alpha_tokens)
+        for pos, stemmed in zip(alpha_positions, stemmed_tokens, strict=True):
             out[pos] = stemmed
     return out
 
