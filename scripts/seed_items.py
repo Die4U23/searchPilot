@@ -62,8 +62,10 @@ def main() -> int:
     ]
     pool = create_pool(args.database_url)
     try:
-        for batch in _batches(rows, args.batch_size):
-            with pool.connection() as connection, connection.cursor() as cursor:
+        # The startup check treats any item row as a completed step. Commit only
+        # after every batch succeeds, so an interrupted import stays retryable.
+        with pool.connection() as connection, connection.cursor() as cursor:
+            for batch in _batches(rows, args.batch_size):
                 cursor.executemany(UPSERT_SQL, batch)
     finally:
         pool.close()

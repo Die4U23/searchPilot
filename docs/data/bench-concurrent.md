@@ -1,5 +1,25 @@
 # 真实 HTTP 并发压测
 
+## 持续混合负载入口（2026-10-22）
+
+当前脚本支持 `--duration-seconds`，将选定模式放在同一组 worker 中交替派发。
+例如服务已启动并可达时，在本地 PowerShell 执行：
+
+```powershell
+.venv\Scripts\python.exe scripts/bench_concurrent.py --base-url http://127.0.0.1:18081 --duration-seconds 600 --concurrency 4 --timeout 10 --warmup 4 --modes bm25 vector hybrid ltr --data-version d3a904f41240 --out artifacts/bench-concurrent/new-soak/results.json
+```
+
+持续模式忽略 `--requests`；600 秒从各模式顺序预热结束后计起，到期停止新派发，
+在途请求按各自总截止时间排空。模式轮转，每组模式共享同一查询，再推进到下一查询，
+避免每种模式只能看到固定子集。报告保留整体、分模式汇总和每请求派发偏移；吞吐分母
+包含排空时间。预热失败也使退出非零，不删除或重试失败请求。取消留下的 pending-only
+记录是 UNKNOWN。旧的固定请求数模式仍按模式顺序执行。
+
+输出路径及相应 JSONL 必须尚不存在。每个已完成请求也保存在客户端内存中，内存占用
+随请求数增长；最长允许 3600 秒不等于已验证一小时高吞吐运行。此工具不自动采集容器
+资源，也不验证服务器镜像来源；本轮容器验证另存这些证据，见
+[容器与持续并发报告](container-soak-2026-10-22.md)。以下保留 2026-10-13 历史结果。
+
 2026-10-13，来源：`searchpilot`。在本机 CPU、65238 篇 MIND 新闻、100 条固定查询、并发 4、每模式 120 个正式请求、每模式 4 次独立顺序预热条件下，BM25 / vector / hybrid / LTR 的正式请求均为 **120/120 成功**。向量模式第一条预热在 **10 秒截止时间超时**，不能把本轮写成冷启动全部通过。
 
 这是单机、单 worker、一次闭环负载记录。未设置业务 SLA，未测容量上限或长期稳定性，也未使用 PostgreSQL。功能成功率与性能验收分开解释。

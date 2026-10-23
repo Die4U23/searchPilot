@@ -114,6 +114,8 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 Docker/Compose 默认设置 `SEARCHPILOT_VECTOR_WARMUP=true`，在监听请求前加载向量模型并完成一次编码，避免把初始化延迟留给首个搜索请求。这会增加启动等待时间；预热失败时 BM25 仍可调用，`/health/ready` 返回 503，向量、混合与 LTR 搜索不可用，修复后需重启。容器健康检查仍检查 `/health/live`；流量准入应检查 `/health/ready`。直接运行 Python 默认不预热，可通过同名环境变量开启（Settings 不自动读取 `.env`）。
 
+本轮[容器与持续并发验证](docs/data/container-soak-2026-10-22.md)已覆盖全新 PostgreSQL 导入、十分钟混合搜索、健康/资源采样和重启后反馈持久性；启动导入按整步事务提交，失败不会留下被误判为已完成的部分批次。
+
 ## 目录结构
 
 ```text

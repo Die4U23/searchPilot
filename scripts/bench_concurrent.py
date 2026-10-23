@@ -40,6 +40,7 @@ class Config:
     timeout: float = 10.0
     warmup: int = 4
     limit: int = 10
+    duration_seconds: float | None = None
 
     def __post_init__(self) -> None:
         url = urlsplit(self.base_url)
@@ -58,6 +59,10 @@ class Config:
             raise ValueError("timeout must be finite and in (0, 300] seconds")
         if not 0 <= self.warmup <= 1000 or not 1 <= self.limit <= 100:
             raise ValueError("warmup must be 0..1000 and limit 1..100")
+        if self.duration_seconds is not None and (
+            not math.isfinite(self.duration_seconds) or not 0 < self.duration_seconds <= 3600
+        ):
+            raise ValueError("duration must be finite and in (0, 3600] seconds")
 
 
 def latency_summary(samples: list[float]) -> dict[str, float | int | None]:
@@ -78,6 +83,7 @@ async def request_once(
     mode: str,
     query: str,
     phase: str = "measured",
+    dispatched_ms: float | None = None,
     event_sink: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     request_id = "req_" + uuid.uuid4().hex
@@ -92,6 +98,8 @@ async def request_once(
         "model_version": None,
         "result_count": None,
     }
+    if dispatched_ms is not None:
+        record["dispatched_ms"] = dispatched_ms
     if event_sink is not None:
         event_sink({"event": "pending", "phase": phase, **record, "outcome": "pending"})
     started = time.perf_counter()
@@ -190,13 +198,13 @@ def summarize(records: list[dict[str, Any]], elapsed: float) -> dict[str, Any]:
         "total": len(records),
         "successes": len(successes),
         "failures": len(records) - len(successes),
-        "success_rate": len(successes) / len(records),
-        "timeout_rate": counts["timeout"] / len(records),
+        "success_rate": len(successes) / len(records) if records else None,
+        "timeout_rate": counts["timeout"] / len(records) if records else None,
         "outcomes": dict(sorted(counts.items())),
         "status_codes": dict(sorted(Counter(str(row["status_code"]) for row in records).items())),
         "elapsed_seconds": elapsed,
-        "completed_requests_per_second": len(records) / elapsed,
-        "successful_requests_per_second": len(successes) / elapsed,
+        "completed_requests_per_second": len(records) / elapsed if elapsed > 0 else None,
+        "successful_requests_per_second": len(successes) / elapsed if elapsed > 0 else None,
         "success_latency": latency_summary([row["elapsed_ms"] for row in successes]),
         "all_latency": latency_summary([row["elapsed_ms"] for row in records]),
         "model_versions": sorted({row["model_version"] for row in successes}),
@@ -247,9 +255,9 @@ async def run_mode(
                     index=index,
                     mode=mode,
                     query=queries[index % len(queries)],
+                    dispatched_ms=dispatched_ms,
                     event_sink=event_sink,
                 )
-                row["dispatched_ms"] = dispatched_ms
                 records.append(row)
 
         await asyncio.gather(*(worker() for _ in range(min(config.concurrency, config.requests))))
@@ -259,6 +267,93 @@ async def run_mode(
         "mode": mode,
         "warmup": warmup,
         "summary": summarize(records, elapsed),
+        "requests": records,
+    }
+
+
+async def run_mixed_duration(
+    config: Config,
+    modes: list[str],
+    queries: list[str],
+    *,
+    event_sink: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    """Dispatch until the duration expires, then drain under each request's deadline."""
+    modes = list(dict.fromkeys(modes))
+    if (
+        config.duration_seconds is None
+        or not modes
+        or any(mode not in MODES for mode in modes)
+        or not queries
+        or any(not query.strip() for query in queries)
+    ):
+        raise ValueError("duration, supported modes and nonempty queries are required")
+    duration = config.duration_seconds
+    limits = httpx.Limits(
+        max_connections=config.concurrency, max_keepalive_connections=config.concurrency
+    )
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(config.timeout),
+        limits=limits,
+        trust_env=False,
+        follow_redirects=False,
+    ) as client:
+        warmup = [
+            await request_once(
+                client,
+                config,
+                index=mode_index * config.warmup + index,
+                mode=mode,
+                query=queries[index % len(queries)],
+                phase="warmup",
+                event_sink=event_sink,
+            )
+            for mode_index, mode in enumerate(modes)
+            for index in range(config.warmup)
+        ]
+        records: list[dict[str, Any]] = []
+        next_index = 0
+        started_at = datetime.now(UTC).isoformat()
+        started = time.perf_counter()
+
+        async def worker() -> None:
+            nonlocal next_index
+            while True:
+                dispatched = time.perf_counter() - started
+                if dispatched >= duration:
+                    return
+                # No await between assigning the shared index and dispatching.
+                index = next_index
+                next_index += 1
+                row = await request_once(
+                    client,
+                    config,
+                    index=index,
+                    mode=modes[index % len(modes)],
+                    query=queries[(index // len(modes)) % len(queries)],
+                    dispatched_ms=dispatched * 1000,
+                    event_sink=event_sink,
+                )
+                records.append(row)
+
+        await asyncio.gather(*(worker() for _ in range(config.concurrency)))
+        elapsed = time.perf_counter() - started
+        finished_at = datetime.now(UTC).isoformat()
+    records.sort(key=lambda row: row["index"])
+    return {
+        "mode": "mixed",
+        "modes": modes,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "dispatch_window_seconds": duration,
+        "last_dispatch_seconds": records[-1]["dispatched_ms"] / 1000 if records else None,
+        "drain_seconds": max(0.0, elapsed - duration),
+        "warmup": warmup,
+        "summary": summarize(records, elapsed),
+        "by_mode": {
+            mode: summarize([row for row in records if row["mode"] == mode], elapsed)
+            for mode in modes
+        },
         "requests": records,
     }
 
@@ -296,6 +391,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--requests", type=int, default=120)
+    parser.add_argument(
+        "--duration-seconds",
+        type=float,
+        help="mixed-mode dispatch window in (0, 3600] seconds; replaces --requests",
+    )
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--timeout", type=float, default=10.0)
     parser.add_argument("--warmup", type=int, default=4)
@@ -308,7 +408,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         config = Config(
-            args.base_url, args.requests, args.concurrency, args.timeout, args.warmup, args.limit
+            args.base_url,
+            args.requests,
+            args.concurrency,
+            args.timeout,
+            args.warmup,
+            args.limit,
+            args.duration_seconds,
         )
         with args.queries.open(encoding="utf-8-sig", newline="") as file:
             queries = [row["query_text"] for row in csv.DictReader(file)]
@@ -356,6 +462,17 @@ def main(argv: list[str] | None = None) -> int:
         "requested_modes": list(dict.fromkeys(args.modes)),
         "request_ledger": str(ledger_path),
     }
+    if config.duration_seconds is not None:
+        report["queries"]["order"] = (
+            "CSV order cyclic per mode; global mode round robin, each query used by every mode; "
+            "all splits, relevance is not evaluated"
+        )
+        report["method"].update(
+            workload="closed-loop shared workers, modes mixed round robin, no retry",
+            duration="stop new dispatch at duration, drain in-flight requests; --requests ignored",
+            throughput="completed or successful requests / measured elapsed including drain",
+            warmup="sequential per mode before timed window, separate ledger; not proven cold",
+        )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     # Reserve once before any request. An accidental rerun must preserve failure evidence.
     try:
@@ -380,10 +497,19 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     try:
-        for mode in report["requested_modes"]:
+        execution_modes = (
+            ["mixed"] if config.duration_seconds is not None else report["requested_modes"]
+        )
+        for mode in execution_modes:
             report["active_mode"] = mode
             save()
-            run = asyncio.run(run_mode(config, mode, queries, event_sink=record_event))
+            run = asyncio.run(
+                run_mixed_duration(
+                    config, report["requested_modes"], queries, event_sink=record_event
+                )
+                if config.duration_seconds is not None
+                else run_mode(config, mode, queries, event_sink=record_event)
+            )
             report["runs"].append(run)
             report["client_checkout_end"] = code_metadata(root)
             save()
