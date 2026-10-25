@@ -23,7 +23,7 @@ from pathlib import Path
 import httpx
 import psycopg
 import pyarrow.parquet as pq
-from scripts.bench_concurrent import MODES
+from scripts.bench_concurrent import MODES, Config, read_queries
 from scripts.soak_memory import sample_windows_process
 
 from searchpilot.recommend.history import load_user_history
@@ -41,6 +41,14 @@ TABLES = (
     "feedback_events",
 )
 FLAGS = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+NATIVE_ENV_KEYS = (
+    "SEARCHPILOT_DISABLE_THP",
+    "MALLOC_ARENA_MAX",
+    "GLIBC_TUNABLES",
+    "LD_PRELOAD",
+    "PYTHONMALLOC",
+    "PYTHONTRACEMALLOC",
+)
 
 
 def now():
@@ -48,8 +56,12 @@ def now():
 
 
 def clean_environment():
-    prefixes = ("SEARCHPILOT_", "OPENAI_", "ARCBENCH_", "POSTGRES", "COMPOSE_")
-    env = {k: v for k, v in os.environ.items() if not k.upper().startswith(prefixes)}
+    prefixes = ("SEARCHPILOT_", "OPENAI_", "ARCBENCH_", "POSTGRES", "COMPOSE_", "MALLOC_")
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.upper().startswith(prefixes) and k.upper() not in NATIVE_ENV_KEYS
+    }
     env["POSTGRES_PASSWORD"] = "searchpilot"
     return env
 
@@ -155,6 +167,13 @@ async def probe_health(client, endpoint):
 class Harness:
     def __init__(self, args):
         self.args, self.out, self.env = args, args.out.resolve(), clean_environment()
+        Config(
+            f"http://127.0.0.1:{args.api_port}",
+            concurrency=args.concurrency,
+            duration_seconds=args.duration_seconds,
+        )
+        self.queries, self.query_raw = read_queries(args.queries)
+        self.query_snapshot = self.out / "queries.csv"
         self.docker = (
             shutil.which("docker") or r"C:\Program Files\Docker\Docker\resources\bin\docker.exe"
         )
@@ -182,7 +201,15 @@ class Harness:
             "schema_version": 1,
             "status": "RUNNING",
             "started_at": now(),
-            "config": {**vars(args), "out": str(self.out)},
+            "config": {
+                k: str(v.resolve()) if isinstance(v, Path) else v for k, v in vars(args).items()
+            },
+            "queries": {
+                "source_path": str(args.queries.resolve()),
+                "path": str(self.query_snapshot),
+                "sha256": hashlib.sha256(self.query_raw).hexdigest(),
+                "count": len(self.queries),
+            },
             "requests": [],
             "commands": [],
             "external_llm_calls": 0,
@@ -219,9 +246,20 @@ class Harness:
 
     def state(self):
         rows = json.loads(self.command([self.docker, "inspect", self.api, self.db]))
-        return [
-            {k: row[k] for k in ("Id", "Name", "Image", "RestartCount", "State")} for row in rows
-        ]
+        states = []
+        for row in rows:
+            config = row.get("Config", {})
+            env = dict(value.split("=", 1) for value in config.get("Env", []) if "=" in value)
+            keys = {*NATIVE_ENV_KEYS, *(key for key in env if key.startswith("MALLOC_"))}
+            states.append(
+                {
+                    **{k: row[k] for k in ("Id", "Name", "Image", "RestartCount", "State")},
+                    "command": config.get("Cmd"),
+                    "entrypoint": config.get("Entrypoint"),
+                    "native_env": {key: env.get(key) for key in sorted(keys)},
+                }
+            )
+        return states
 
     def counts(self):
         with psycopg.connect(
@@ -237,6 +275,8 @@ class Harness:
     def prepare(self):
         self.out.mkdir(parents=True, exist_ok=False)
         self.owns_output = True
+        with self.query_snapshot.open("xb") as file:
+            file.write(self.query_raw)
         self.save()
         for resource in ("container", "volume", "network"):
             listing = [self.docker, resource, "ls", *(["-a"] if resource == "container" else [])]
@@ -501,6 +541,35 @@ class Harness:
             self.command([self.docker, "exec", self.api, "python", "-c", code])
         )
 
+    def benchmark_command(self):
+        return [
+            sys.executable,
+            "-m",
+            "scripts.bench_concurrent",
+            "--base-url",
+            self.base,
+            "--duration-seconds",
+            str(self.args.duration_seconds),
+            "--concurrency",
+            str(self.args.concurrency),
+            "--timeout",
+            "10",
+            "--limit",
+            "10",
+            "--queries",
+            str(self.query_snapshot),
+            "--warmup",
+            "4",
+            "--modes",
+            *MODES,
+            "--data-version",
+            self.args.data_version,
+            "--server-description",
+            "isolated Compose PG16 CPU embedding; source verified in harness summary",
+            "--out",
+            str(self.out / "soak.json"),
+        ]
+
     async def run(self):
         sampler = None
         try:
@@ -534,29 +603,7 @@ class Harness:
                 self.phase = "baseline"
                 self.save()
                 await asyncio.sleep(self.args.baseline_seconds)
-                bench = [
-                    sys.executable,
-                    "-m",
-                    "scripts.bench_concurrent",
-                    "--base-url",
-                    self.base,
-                    "--duration-seconds",
-                    str(self.args.duration_seconds),
-                    "--concurrency",
-                    str(self.args.concurrency),
-                    "--timeout",
-                    "10",
-                    "--warmup",
-                    "4",
-                    "--modes",
-                    *MODES,
-                    "--data-version",
-                    self.args.data_version,
-                    "--server-description",
-                    "isolated Compose PG16 CPU embedding; source verified in harness summary",
-                    "--out",
-                    str(self.out / "soak.json"),
-                ]
+                bench = self.benchmark_command()
                 self.phase = "load"
                 self.report.update(soak_started_at=now(), benchmark_command=bench)
                 pid_path = self.out / "benchmark.pid"
@@ -692,6 +739,7 @@ def main(argv=None):
     parser.add_argument("--db-port", type=int, default=15433)
     parser.add_argument("--duration-seconds", type=float, default=3600)
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument("--queries", type=Path, default=ROOT / "data/queries/queries.csv")
     parser.add_argument("--baseline-seconds", type=float, default=60)
     parser.add_argument("--recovery-seconds", type=float, default=120)
     parser.add_argument("--data-version", default="d3a904f41240")
@@ -699,7 +747,7 @@ def main(argv=None):
     if (
         not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", args.project)
         or not 0 < args.duration_seconds <= 3600
-        or args.concurrency < 1
+        or not 1 <= args.concurrency <= 256
         or any(
             not math.isfinite(v) or v < 0 for v in (args.baseline_seconds, args.recovery_seconds)
         )
@@ -707,7 +755,10 @@ def main(argv=None):
         or args.api_port == args.db_port
     ):
         parser.error("invalid project, duration, concurrency, recovery interval, or ports")
-    harness = Harness(args)
+    try:
+        harness = Harness(args)
+    except (ValueError, KeyError, OSError) as exc:
+        parser.error(str(exc))
     asyncio.run(harness.run())
     return int(harness.report["status"] != "COMPLETED")
 

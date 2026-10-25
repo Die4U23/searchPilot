@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
@@ -64,6 +66,7 @@ def arguments(out):
         db_port=15433,
         duration_seconds=1,
         concurrency=4,
+        queries=Path("data/queries/queries.csv"),
         baseline_seconds=0,
         recovery_seconds=0,
         data_version="fixture",
@@ -78,6 +81,12 @@ def test_environment_never_inherits_private_service_or_compose_settings(monkeypa
         "POSTGRES_PASSWORD",
         "COMPOSE_FILE",
         "COMPOSE_ENV_FILES",
+        "MALLOC_ARENA_MAX",
+        "MALLOC_TRIM_THRESHOLD_",
+        "GLIBC_TUNABLES",
+        "LD_PRELOAD",
+        "PYTHONMALLOC",
+        "PYTHONTRACEMALLOC",
     ):
         monkeypatch.setenv(key, "private-fixture-value")
     monkeypatch.setenv("PATH", "preserved-path")
@@ -247,3 +256,86 @@ async def test_health_body_is_bounded():
         row = await probe_health(client, "live")
     assert row["available"] is False
     assert row["error_type"] == "ValueError"
+
+
+@pytest.mark.parametrize("invalid", ["concurrency", "duplicate", "missing", "long", "empty"])
+def test_invalid_workload_rejected_before_docker(tmp_path, monkeypatch, invalid):
+    queries = tmp_path / "input.csv"
+    text = {"duplicate": "one\none", "long": "x" * 257, "empty": "   "}.get(invalid, "one")
+    if invalid != "missing":
+        queries.write_text("query_text\n" + text + "\n", encoding="utf-8")
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: pytest.fail("must not call Docker"))
+    out = tmp_path / "run"
+    with pytest.raises(SystemExit) as error:
+        main(
+            [
+                "--out",
+                str(out),
+                "--queries",
+                str(queries),
+                "--concurrency",
+                "257" if invalid == "concurrency" else "8",
+            ]
+        )
+    assert error.value.code == 2
+    assert not out.exists()
+
+
+def test_cli_freezes_query_bytes_and_forwards_snapshot(tmp_path, monkeypatch):
+    source = tmp_path / "input.csv"
+    raw = b"\xef\xbb\xbfquery_text\r\none\r\ntwo\r\n"
+    source.write_bytes(raw)
+    out = tmp_path / "run"
+
+    async def run(harness):
+        source.write_text("query_text\nchanged\n", encoding="utf-8")
+
+        def command(args):
+            if "inspect" in args:
+                return '[{"Id":"fixture-image"}]'
+            if "info" in args:
+                return "{}"
+            return ""
+
+        monkeypatch.setattr(harness, "command", command)
+        harness.prepare()
+        command = harness.benchmark_command()
+        snapshot = Path(command[command.index("--queries") + 1])
+        assert snapshot == out / "queries.csv"
+        assert snapshot.read_bytes() == raw
+        assert harness.queries == ["one", "two"]
+        assert harness.report["queries"]["sha256"] == hashlib.sha256(raw).hexdigest()
+        assert command[command.index("--concurrency") + 1] == "8"
+        assert command[command.index("--limit") + 1] == "10"
+        assert command[command.index("--timeout") + 1] == "10"
+        assert harness.report["config"]["queries"] == str(source.resolve())
+        harness.report["status"] = "COMPLETED"
+
+    monkeypatch.setattr(Harness, "run", run)
+    assert main(["--out", str(out), "--queries", str(source), "--concurrency", "8"]) == 0
+
+
+def test_state_exposes_only_native_environment_allowlist(tmp_path, monkeypatch):
+    harness = Harness(arguments(tmp_path))
+    row = {"Id": "fixture", "Name": "api", "Image": "image", "RestartCount": 0, "State": {}}
+    row["Config"] = {
+        "Cmd": ["python", "scripts/docker_entrypoint.py"],
+        "Entrypoint": None,
+        "Env": [
+            "MALLOC_ARENA_MAX=2",
+            "SEARCHPILOT_DISABLE_THP=true",
+            "MALLOC_TRIM_THRESHOLD_=4096",
+            "LD_PRELOAD",
+            "PRIVATE_TOKEN=hidden",
+            "DATABASE_URL=hidden",
+        ],
+    }
+    monkeypatch.setattr(harness, "command", lambda args: json.dumps([row]))
+    actual = harness.state()[0]
+    assert actual["command"] == row["Config"]["Cmd"]
+    assert actual["entrypoint"] is None
+    assert actual["native_env"]["MALLOC_ARENA_MAX"] == "2"
+    assert actual["native_env"]["SEARCHPILOT_DISABLE_THP"] == "true"
+    assert actual["native_env"]["MALLOC_TRIM_THRESHOLD_"] == "4096"
+    assert actual["native_env"]["LD_PRELOAD"] is None
+    assert "hidden" not in json.dumps(actual)

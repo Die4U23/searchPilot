@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -277,6 +278,64 @@ def cli_paths(tmp_path: Path) -> tuple[Path, Path]:
     return queries, tmp_path / "result.json"
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"query_text\none\none\n",
+        b"query_text\n   \n",
+        b"query_text\n" + b"x" * 257,
+        b"query_text,extra\n,other\n",
+        b"other\nvalue\n",
+        b"query_text\n\xff",
+    ],
+)
+def test_read_queries_rejects_invalid_inputs(tmp_path, raw):
+    source = tmp_path / "input.csv"
+    source.write_bytes(raw)
+    with pytest.raises(ValueError):
+        bench_concurrent.read_queries(source)
+
+
+@pytest.mark.parametrize("raw", [b"", b"other\nvalue\n", b"query_text,query_text\nfirst,second\n"])
+def test_read_queries_requires_one_unambiguous_query_header(tmp_path, raw):
+    source = tmp_path / "input.csv"
+    source.write_bytes(raw)
+    with pytest.raises(ValueError, match="exactly one query_text column"):
+        bench_concurrent.read_queries(source)
+
+
+def test_read_queries_reads_once_preserves_bom_csv_and_exact_text(tmp_path, monkeypatch):
+    source = tmp_path / "input.csv"
+    raw = b'\xef\xbb\xbfquery_text,kind\r\n"one,two",fixture\r\n one ,fixture\r\n'
+    reads = []
+
+    def read(path):
+        reads.append(path)
+        return raw
+
+    monkeypatch.setattr(Path, "read_bytes", read)
+    assert bench_concurrent.read_queries(source) == (["one,two", " one "], raw)
+    assert reads == [source]
+
+
+@pytest.mark.parametrize("duration_args", [[], ["--duration-seconds", "0.1"]])
+def test_cli_refuses_existing_query_snapshot_before_requests(tmp_path, monkeypatch, duration_args):
+    queries, out = cli_paths(tmp_path)
+    snapshot = out.with_suffix(".queries.csv")
+    snapshot.write_bytes(b"prior evidence")
+    monkeypatch.setattr(bench_concurrent, "code_metadata", lambda root: {})
+
+    async def unexpected(*args, **kwargs):
+        pytest.fail("existing snapshot must be rejected before requests")
+
+    monkeypatch.setattr(bench_concurrent, "run_mode", unexpected)
+    monkeypatch.setattr(bench_concurrent, "run_mixed_duration", unexpected)
+    with pytest.raises(SystemExit) as error:
+        bench_concurrent.main(["--queries", str(queries), "--out", str(out), *duration_args])
+    assert error.value.code == 2
+    assert snapshot.read_bytes() == b"prior evidence"
+
+
 @pytest.mark.parametrize("duration_args", [[], ["--duration-seconds", "0.1"]])
 def test_cli_refuses_existing_output_before_requests(
     tmp_path: Path, monkeypatch, duration_args
@@ -298,9 +357,13 @@ def test_cli_refuses_existing_output_before_requests(
 
 async def test_cli_real_http_marks_complete(tmp_path: Path, monkeypatch) -> None:
     queries, out = cli_paths(tmp_path)
+    original_raw = queries.read_bytes()
+    observed_queries = []
     monkeypatch.setattr(bench_concurrent, "code_metadata", lambda root: {})
 
     async def handler(headers, body, writer):
+        observed_queries.append(body["query"])
+        queries.write_text("query_text\nchanged\n", encoding="utf-8")
         in_progress = json.loads(out.read_text(encoding="utf-8"))
         assert in_progress["status"] == "RUNNING"
         assert in_progress["active_mode"] == "bm25"
@@ -337,6 +400,10 @@ async def test_cli_real_http_marks_complete(tmp_path: Path, monkeypatch) -> None
     assert report["requested_modes"] == ["bm25"]
     assert report["active_mode"] is None
     assert report["runs"][0]["summary"]["successes"] == 3
+    assert sorted(observed_queries) == ["one", "one", "two"]
+    assert out.with_suffix(".queries.csv").read_bytes() == original_raw
+    assert report["queries"]["path"] == str(out.with_suffix(".queries.csv").resolve())
+    assert report["queries"]["sha256"] == hashlib.sha256(original_raw).hexdigest()
     events = [
         json.loads(line) for line in out.with_suffix(".requests.jsonl").read_text().splitlines()
     ]

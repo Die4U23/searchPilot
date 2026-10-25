@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import csv
 import hashlib
+import io
 import json
 import math
 import os
@@ -63,6 +64,22 @@ class Config:
             not math.isfinite(self.duration_seconds) or not 0 < self.duration_seconds <= 3600
         ):
             raise ValueError("duration must be finite and in (0, 3600] seconds")
+
+
+def read_queries(path: Path) -> tuple[list[str], bytes]:
+    """Parse and fingerprint the same bytes; preserve exact query text and CSV order."""
+    raw = path.read_bytes()
+    reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
+    if reader.fieldnames is None or reader.fieldnames.count("query_text") != 1:
+        raise ValueError("queries must contain exactly one query_text column")
+    queries = [row["query_text"] for row in reader]
+    if not queries or any(
+        not isinstance(query, str) or not query.strip() or len(query) > 256 for query in queries
+    ):
+        raise ValueError("queries must contain query_text values of 1..256 characters")
+    if len(set(queries)) != len(queries):
+        raise ValueError("queries must not contain duplicate query_text values")
+    return queries, raw
 
 
 def latency_summary(samples: list[float]) -> dict[str, float | int | None]:
@@ -416,14 +433,12 @@ def main(argv: list[str] | None = None) -> int:
             args.limit,
             args.duration_seconds,
         )
-        with args.queries.open(encoding="utf-8-sig", newline="") as file:
-            queries = [row["query_text"] for row in csv.DictReader(file)]
-        if not queries or any(not query.strip() or len(query) > 256 for query in queries):
-            raise ValueError("queries must contain query_text values of 1..256 characters")
+        queries, query_raw = read_queries(args.queries)
     except (ValueError, KeyError, OSError) as exc:
         parser.error(str(exc))
     root = Path(__file__).resolve().parents[1]
     ledger_path = args.out.with_suffix(".requests.jsonl")
+    query_snapshot = args.out.with_suffix(".queries.csv")
     report: dict[str, Any] = {
         "schema_version": 1,
         "status": "RUNNING",
@@ -442,8 +457,9 @@ def main(argv: list[str] | None = None) -> int:
         },
         "client_checkout_start": code_metadata(root),
         "queries": {
-            "path": str(args.queries),
-            "sha256": hashlib.sha256(args.queries.read_bytes()).hexdigest(),
+            "path": str(query_snapshot.resolve()),
+            "source_path": str(args.queries.resolve()),
+            "sha256": hashlib.sha256(query_raw).hexdigest(),
             "count": len(queries),
             "order": "CSV order, cyclic, all splits; relevance is not evaluated",
             "min_chars": min(map(len, queries)),
@@ -480,6 +496,11 @@ def main(argv: list[str] | None = None) -> int:
             file.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     except FileExistsError:
         parser.error(f"output already exists; choose a new run path: {args.out}")
+    try:
+        with query_snapshot.open("xb") as file:
+            file.write(query_raw)
+    except FileExistsError:
+        parser.error(f"query snapshot already exists; choose a new run path: {query_snapshot}")
     try:
         ledger = ledger_path.open("x", encoding="utf-8")
     except FileExistsError:
