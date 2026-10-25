@@ -7,6 +7,7 @@ Unknown/ambiguous requests remain in issued denominators but have no invented la
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from collections import Counter, defaultdict
@@ -14,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from scripts.bench_concurrent import MODES, latency_summary
+from scripts.bench_concurrent import MODES, latency_summary, read_queries
 
 
 def _number(value: Any) -> bool:
@@ -332,6 +333,118 @@ def _group_counts(rows: list[dict[str, Any]], modes: list[str]) -> dict[str, Any
     }
 
 
+def _query_coverage(
+    bench: dict[str, Any],
+    rows: list[dict[str, Any]],
+    pending: list[dict[str, Any]],
+    modes: list[str],
+    path: Path | None,
+    min_repeats: int,
+    issues: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Check the supplied input and the measured issue order, excluding warmup repeats."""
+    report: dict[str, Any] = {"provided": path is not None, "min_repeats": min_repeats}
+    if path is None:
+        return {**report, "verified": False, "reason": "expected queries not supplied"}
+    report["path"] = str(path)
+    try:
+        queries, raw = read_queries(path)
+    except (OSError, ValueError, UnicodeError) as exc:
+        issues.append({"kind": "queries_read_error", "error": type(exc).__name__})
+        return {**report, "verified": False}
+    first_issue = len(issues)
+    declared = bench.get("queries") if isinstance(bench.get("queries"), dict) else {}
+    digest = hashlib.sha256(raw).hexdigest()
+    report.update(sha256=digest, query_count=len(queries))
+    if digest != declared.get("sha256"):
+        issues.append(
+            {
+                "kind": "queries_sha256_mismatch",
+                "expected": digest,
+                "benchmark": declared.get("sha256"),
+            }
+        )
+    if type(declared.get("count")) is not int or declared["count"] != len(queries):
+        issues.append(
+            {
+                "kind": "queries_count_mismatch",
+                "expected": len(queries),
+                "benchmark": declared.get("count"),
+            }
+        )
+    issued: Counter[tuple[str, str]] = Counter()
+    successful: Counter[tuple[str, str]] = Counter()
+    for row in rows:
+        event, result = row["pending"], row["result"]
+        query, mode = event.get("query"), event.get("mode")
+        if (
+            event.get("phase") != "measured"
+            or not isinstance(query, str)
+            or not isinstance(mode, str)
+        ):
+            continue
+        issued[(query, mode)] += 1
+        if result is not None and result.get("outcome") == "success":
+            successful[(query, mode)] += 1
+    expected = {(query, mode) for query in queries for mode in modes}
+    missing = sorted(expected - issued.keys())
+    unexpected = sorted(issued.keys() - expected)
+    groups = [
+        {
+            "query": query,
+            "mode": mode,
+            "issued": issued[(query, mode)],
+            "successful": successful[(query, mode)],
+        }
+        for query in queries
+        for mode in modes
+    ]
+    for query, mode in missing:
+        issues.append({"kind": "missing_query_mode", "query": query, "mode": mode})
+    for query, mode in unexpected:
+        issues.append({"kind": "unexpected_query_mode", "query": query, "mode": mode})
+    insufficient = [group for group in groups if group["successful"] < min_repeats]
+    for group in insufficient:
+        issues.append({"kind": "insufficient_query_mode_repeats", **group, "expected": min_repeats})
+    order_errors = 0
+    for index, event in enumerate(pending):
+        query, mode = queries[(index // len(modes)) % len(queries)], modes[index % len(modes)]
+        if (
+            type(event.get("index")) is not int
+            or event["index"] != index
+            or event.get("query") != query
+            or event.get("mode") != mode
+        ):
+            order_errors += 1
+            issues.append(
+                {
+                    "kind": "workload_order_mismatch",
+                    "request_id": event["request_id"],
+                    "expected_index": index,
+                    "observed_index": event.get("index"),
+                    "expected_query": query,
+                    "observed_query": event.get("query"),
+                    "expected_mode": mode,
+                    "observed_mode": event.get("mode"),
+                }
+            )
+    return {
+        **report,
+        "verified": len(issues) == first_issue,
+        "scope": (
+            "measured requests only; repeats require paired successful results; "
+            "input order is significant"
+        ),
+        "expected_group_count": len(expected),
+        "observed_group_count": len(issued),
+        "missing_groups": [{"query": q, "mode": m} for q, m in missing],
+        "unexpected_groups": [{"query": q, "mode": m} for q, m in unexpected],
+        "insufficient_repeat_groups": insufficient,
+        "groups": groups,
+        "workload_order_mismatches": order_errors,
+    }
+
+
 def summarize(
     bench: dict[str, Any],
     events: list[dict[str, Any]],
@@ -339,12 +452,18 @@ def summarize(
     duration_seconds: float = 3600,
     window_seconds: float = 300,
     samples: list[dict[str, Any]] | None = None,
+    queries: Path | None = None,
+    min_repeats: int = 1,
 ) -> dict[str, Any]:
     """Reconstruct unique issued IDs; duplicates are ambiguous, never silently deduplicated."""
     if not _number(duration_seconds) or not 0 < duration_seconds <= 3600:
         raise ValueError("duration_seconds must be finite and in (0, 3600]")
     if not _number(window_seconds) or window_seconds <= 0:
         raise ValueError("window_seconds must be finite and positive")
+    if type(min_repeats) is not int or min_repeats < 1:
+        raise ValueError("min_repeats must be a positive integer")
+    if min_repeats > 1 and queries is None:
+        raise ValueError("min_repeats > 1 requires queries")
     issues: list[dict[str, Any]] = []
 
     def issue(kind: str, **details: Any) -> None:
@@ -354,6 +473,14 @@ def summarize(
         lambda: {"pending": [], "result": []}
     )
     event_counts: Counter[str] = Counter()
+    config = bench.get("config") if isinstance(bench.get("config"), dict) else {}
+    concurrency = config.get("concurrency")
+    concurrency_valid = type(concurrency) is int and concurrency > 0
+    if not concurrency_valid and ("concurrency" in config or queries is not None):
+        issue("invalid_configured_concurrency", observed=concurrency)
+    active: Counter[str] = Counter()
+    in_flight = peak_in_flight = exceeded_events = 0
+    measured_pending: list[dict[str, Any]] = []
     for line, event in enumerate(events, 1):
         if not isinstance(event, dict):
             issue("invalid_event", line=line)
@@ -368,6 +495,25 @@ def summarize(
             continue
         event_counts[event_type] += 1
         grouped[request_id][event_type].append((line, event))
+        if event_type == "pending":
+            active[request_id] += 1
+            in_flight += 1
+            peak_in_flight = max(peak_in_flight, in_flight)
+            if concurrency_valid and in_flight > concurrency:
+                exceeded_events += 1
+            if event.get("phase") == "measured":
+                measured_pending.append(event)
+        elif active[request_id]:
+            active[request_id] -= 1
+            in_flight -= 1
+            if not active[request_id]:
+                del active[request_id]
+        else:
+            issue("result_without_inflight_request", line=line, request_id=request_id)
+    if exceeded_events:
+        issue("concurrency_exceeded", configured=concurrency, observed_peak=peak_in_flight)
+    if active:
+        issue("inflight_requests_remaining", pending_events=in_flight, request_ids=sorted(active))
 
     rows: list[dict[str, Any]] = []
     duplicates: list[dict[str, Any]] = []
@@ -512,7 +658,6 @@ def summarize(
         )
     if bench.get("status") != "COMPLETED":
         issue("benchmark_not_completed", status=bench.get("status"))
-    config = bench.get("config") if isinstance(bench.get("config"), dict) else {}
     if config.get("duration_seconds") != duration_seconds:
         issue(
             "duration_mismatch", benchmark=config.get("duration_seconds"), expected=duration_seconds
@@ -524,9 +669,13 @@ def summarize(
         not isinstance(requested_modes, list)
         or not requested_modes
         or any(mode not in MODES for mode in requested_modes)
+        or len(set(requested_modes)) != len(requested_modes)
     ):
         issue("invalid_requested_modes")
         requested_modes = list(MODES)
+    coverage = _query_coverage(
+        bench, rows, measured_pending, requested_modes, queries, min_repeats, issues
+    )
     for mode in dict.fromkeys(requested_modes):
         if not phases["measured"]["by_mode"][mode]["issued"]:
             issue("missing_measured_mode", mode=mode)
@@ -610,6 +759,19 @@ def summarize(
         "duration_seconds": duration_seconds,
         "window_seconds": window_seconds,
         "benchmark_crosscheck": crosscheck,
+        "coverage": coverage,
+        "inflight": {
+            "scope": (
+                "client pending/result event order, including warmup; "
+                "not server execution concurrency"
+            ),
+            "configured_concurrency": concurrency,
+            "configuration_checked": concurrency_valid,
+            "peak": peak_in_flight,
+            "pending_events_at_end": in_flight,
+            "pending_request_ids_at_end": sorted(active),
+            "pending_events_above_limit": exceeded_events,
+        },
         "issues": issues,
         "ledger": {
             "event_rows": len(events),
@@ -652,11 +814,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bench", required=True, type=Path)
     parser.add_argument("--ledger", required=True, type=Path)
     parser.add_argument("--samples", type=Path)
+    parser.add_argument("--queries", type=Path)
+    parser.add_argument("--min-repeats", type=int, default=1)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--duration-seconds", type=float, default=3600)
     parser.add_argument("--window-seconds", type=float, default=300)
     args = parser.parse_args(argv)
-    inputs = [path for path in (args.bench, args.ledger, args.samples) if path is not None]
+    inputs = [
+        path for path in (args.bench, args.ledger, args.samples, args.queries) if path is not None
+    ]
     try:
         for path in inputs:
             if args.out.resolve() == path.resolve() or (
@@ -686,6 +852,8 @@ def main(argv: list[str] | None = None) -> int:
             duration_seconds=args.duration_seconds,
             window_seconds=args.window_seconds,
             samples=samples,
+            queries=args.queries,
+            min_repeats=args.min_repeats,
         )
     except Exception as exc:
         report = {
@@ -703,6 +871,7 @@ def main(argv: list[str] | None = None) -> int:
         "bench": str(args.bench),
         "ledger": str(args.ledger),
         "samples": str(args.samples) if args.samples else None,
+        "queries": str(args.queries) if args.queries else None,
     }
     payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     try:

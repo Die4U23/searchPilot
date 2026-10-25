@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -224,6 +225,189 @@ def test_result_before_pending_is_unknown() -> None:
     events = list(reversed(pair("reversed")))
     report = summarize(bench(events=events), events)
     assert report["phases"]["measured"]["unknown"] == 1
+
+
+def query_workload(tmp_path: Path) -> tuple[Path, dict[str, Any], list[dict[str, Any]]]:
+    queries = tmp_path / "queries.csv"
+    raw = b"query_text\nfirst query\nsecond query\n"
+    queries.write_bytes(raw)
+    events = []
+    modes = ["bm25", "vector"]
+    for index in range(12):
+        request = pair(str(index), index * 300000)
+        for event in request:
+            event.update(
+                index=index,
+                mode=modes[index % 2],
+                query=["first query", "second query"][(index // 2) % 2],
+            )
+        events.extend(request)
+    payload = bench(events=events)
+    payload["requested_modes"] = modes
+    payload["config"]["concurrency"] = 2
+    payload["queries"] = {"count": 2, "sha256": hashlib.sha256(raw).hexdigest()}
+    return queries, payload, events
+
+
+def test_expected_query_coverage_hash_repeats_and_input_order(tmp_path: Path) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    report = summarize(payload, events, queries=queries, min_repeats=3)
+    assert report["status"] == "PASSED"
+    assert report["coverage"]["verified"] is True
+    assert report["coverage"]["expected_group_count"] == 4
+    assert {row["successful"] for row in report["coverage"]["groups"]} == {3}
+    assert report["inflight"]["peak"] == 1
+    assert report["inflight"]["configuration_checked"] is True
+    assert "not server execution" in report["inflight"]["scope"]
+    assert "resources are descriptive" in report["status_scope"]
+
+
+@pytest.mark.parametrize(
+    "change", ["missing", "unexpected", "insufficient", "hash", "count", "order"]
+)
+def test_expected_workload_rejects_incomplete_or_mismatched_evidence(
+    tmp_path: Path, change: str
+) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    expected = {
+        "missing": "missing_query_mode",
+        "unexpected": "unexpected_query_mode",
+        "insufficient": "insufficient_query_mode_repeats",
+        "hash": "queries_sha256_mismatch",
+        "count": "queries_count_mismatch",
+        "order": "workload_order_mismatch",
+    }[change]
+    if change == "missing":
+        events = [
+            row
+            for row in events
+            if not (row["query"] == "second query" and row["mode"] == "vector")
+        ]
+    elif change == "unexpected":
+        for row in events[:2]:
+            row["query"] = "unrecorded query"
+    elif change == "hash":
+        # Same parsed workload, different raw input bytes must not match the run provenance.
+        queries.write_bytes(queries.read_bytes().replace(b"\n", b"\r\n"))
+    elif change == "count":
+        payload["queries"]["count"] = 3
+    elif change == "order":
+        # The set and repeat counts are identical; only the ordered workload is wrong.
+        for row in events[:2]:
+            row["query"] = "second query"
+        for row in events[4:6]:
+            row["query"] = "first query"
+    report = summarize(
+        payload, events, queries=queries, min_repeats=4 if change == "insufficient" else 3
+    )
+    assert report["status"] == "FAILED"
+    assert report["coverage"]["verified"] is False
+    assert expected in {issue["kind"] for issue in report["issues"]}
+
+
+def test_warmup_and_unknown_results_cannot_supply_expected_repeats(tmp_path: Path) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    events[-1]["query"] = "mismatch"
+    warm = pair("warmup", phase="warmup")
+    for row in warm:
+        row.update(query="second query", mode="vector")
+    report = summarize(payload, warm + events, queries=queries, min_repeats=3)
+    group = next(
+        row
+        for row in report["coverage"]["groups"]
+        if row["query"] == "second query" and row["mode"] == "vector"
+    )
+    assert group["issued"] == 3 and group["successful"] == 2
+    assert "insufficient_query_mode_repeats" in {issue["kind"] for issue in report["issues"]}
+
+
+def test_single_success_per_group_is_insufficient_and_empty_success_still_fails(
+    tmp_path: Path,
+) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    report = summarize(payload, events[:8], queries=queries, min_repeats=2)
+    assert len(report["coverage"]["insufficient_repeat_groups"]) == 4
+    assert {group["successful"] for group in report["coverage"]["groups"]} == {1}
+    events[1]["result_count"] = 0
+    report = summarize(payload, events, queries=queries)
+    assert report["status"] == "FAILED"
+    assert "empty_success" in {issue["kind"] for issue in report["issues"]}
+
+
+@pytest.mark.parametrize("index", [1, -1, True, None])
+def test_expected_workload_requires_contiguous_integer_indices(tmp_path: Path, index: Any) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    for row in events[:2]:
+        row["index"] = index
+    report = summarize(payload, events, queries=queries)
+    assert "workload_order_mismatch" in {issue["kind"] for issue in report["issues"]}
+
+
+def test_inflight_uses_original_event_order_and_rejects_overlimit_or_residuals() -> None:
+    requests = [pair(str(i), i * 300000) for i in range(12)]
+    sequential = [event for request in requests for event in request]
+    payload = bench(events=sequential)
+    payload["config"]["concurrency"] = 2
+    concurrent = [requests[0][0], requests[1][0], requests[0][1], requests[1][1]] + sequential[4:]
+    report = summarize(payload, concurrent)
+    assert report["status"] == "PASSED"
+    assert report["inflight"]["peak"] == 2
+    overlimit = [request[0] for request in requests] + [request[1] for request in requests]
+    report = summarize(payload, overlimit)
+    assert report["status"] == "FAILED"
+    assert report["inflight"]["peak"] == 12
+    assert report["inflight"]["pending_events_above_limit"] == 10
+    assert "concurrency_exceeded" in {issue["kind"] for issue in report["issues"]}
+    residual = summarize(payload, sequential[:-1])
+    assert residual["inflight"]["pending_events_at_end"] == 1
+    assert residual["inflight"]["pending_request_ids_at_end"] == ["11"]
+    assert "inflight_requests_remaining" in {issue["kind"] for issue in residual["issues"]}
+
+
+def test_optional_queries_preserve_legacy_results_but_repeats_require_them(tmp_path: Path) -> None:
+    events = [event for i in range(12) for event in pair(str(i), i * 300000)]
+    report = summarize(bench(events=events), events)
+    assert report["status"] == "PASSED"
+    assert report["coverage"]["provided"] is False
+    assert report["inflight"]["configuration_checked"] is False
+    with pytest.raises(ValueError, match="requires queries"):
+        summarize(bench(events=events), events, min_repeats=2)
+    queries, payload, events = query_workload(tmp_path)
+    del payload["config"]["concurrency"]
+    assert "invalid_configured_concurrency" in {
+        issue["kind"] for issue in summarize(payload, events, queries=queries)["issues"]
+    }
+
+
+def test_cli_queries_cover_shared_input_validation_and_output_alias(tmp_path: Path) -> None:
+    queries, payload, events = query_workload(tmp_path)
+    benchmark, ledger, out = (
+        tmp_path / name for name in ("bench.json", "ledger.jsonl", "report.json")
+    )
+    benchmark.write_text(json.dumps(payload), encoding="utf-8")
+    ledger.write_text("\n".join(json.dumps(row) for row in events) + "\n", encoding="utf-8")
+    argv = [
+        "--bench",
+        str(benchmark),
+        "--ledger",
+        str(ledger),
+        "--queries",
+        str(queries),
+        "--min-repeats",
+        "3",
+        "--out",
+        str(out),
+    ]
+    assert main(argv) == 0
+    assert json.loads(out.read_text())["coverage"]["verified"] is True
+    with pytest.raises(SystemExit):
+        main([*argv[:-1], str(queries)])
+    queries.write_text("query_text\nsame\nsame\n", encoding="utf-8")
+    failed_out = tmp_path / "failed.json"
+    assert main([*argv[:-1], str(failed_out)]) == 1
+    assert "queries_read_error" in {
+        issue["kind"] for issue in json.loads(failed_out.read_text())["issues"]
+    }
 
 
 def resource_sample(tmp_path: Path) -> dict[str, Any]:
