@@ -110,11 +110,15 @@ Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
 
 需要 Docker Desktop（Linux 容器）。`docker compose up --build` 在容器里的 PostgreSQL 上先跑迁移。物品表、查询目录和已测实验如果是空的，会从挂载的 `data/` 与 `artifacts/` 导入一次。曝光表不导入。然后启动 API，端口是 `8000`。`data/` 和 `artifacts/` 以只读方式挂进去，不打进镜像。镜像安装 `vector` 额外依赖，并在构建时下载 `BAAI/bge-small-en-v1.5`，所以向量和 LTR 检索可以在容器里运行。第一次构建需要网络，镜像比默认安装大。
 
-配置全部来自环境变量，见 [`.env.example`](.env.example)（前缀 `SEARCHPILOT_`）。
+配置来自环境变量，应用项使用 `SEARCHPILOT_` 前缀，容器与 glibc 项另行标注，见 [`.env.example`](.env.example)。
 
 Docker/Compose 默认设置 `SEARCHPILOT_VECTOR_WARMUP=true`，在监听请求前加载向量模型并完成一次编码，避免把初始化延迟留给首个搜索请求。这会增加启动等待时间；预热失败时 BM25 仍可调用，`/health/ready` 返回 503，向量、混合与 LTR 搜索不可用，修复后需重启。容器健康检查仍检查 `/health/live`；流量准入应检查 `/health/ready`。直接运行 Python 默认不预热，可通过同名环境变量开启（Settings 不自动读取 `.env`）。
 
-最新[一小时容器验证与内存排查](docs/data/container-hour-2026-10-23.md)完成并发 4 混合搜索，正式 42,599/42,599 成功，400 个查询/模式组合指纹一致，重启后反馈持久；修复了共享 Snowball 词干器的并发状态污染。API RSS 首末增加 157.60 MiB，空闲恢复未回到基线，增长原因与更长时间是否收敛仍未确认。此前[十分钟验证](docs/data/container-soak-2026-10-22.md)还修复了启动导入的事务原子性。
+Linux/glibc 容器默认使用进程级 `SEARCHPILOT_DISABLE_THP=true` 和 `MALLOC_ARENA_MAX=2`，不执行定时 GC/trim。显式设置 `MALLOC_ARENA_MAX=0` 并重新创建 API 容器可恢复该 glibc 的自动 arena 上限策略；删除或留空会采用默认值 2。
+
+最新[容器内存对照与一小时验证](docs/data/container-memory-arena-2026-10-25.md)定位了 THP 与 glibc 空闲内存保留的贡献。持续并发 4 的顺序 A→B 对照各完成 16,000 请求，400→16k RSS 增长分别为 45.953/3.609 MiB，结果指纹一致；背景负载差异保留，不据此宣称吞吐提升。最终正常入口一小时 **53,650/53,650** 请求成功，末 20 分钟 RSS 增长 **0.6875 MiB**、斜率 **0.0349 MiB/分钟**，通过预设内存门槛；17 项业务与重启检查通过。健康采样实际 361 轮全部成功，名义 360 轮的边界差异见报告。结论限于固定查询集、单进程、并发 4 和一小时观察，不代表无限运行无泄漏。
+
+此前[一小时验证](docs/data/container-hour-2026-10-23.md)修复了共享 Snowball 词干器的并发状态污染，[十分钟验证](docs/data/container-soak-2026-10-22.md)修复了启动导入的事务原子性。
 
 ## 目录结构
 
