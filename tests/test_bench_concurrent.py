@@ -182,14 +182,17 @@ async def test_total_timeout_includes_headers_and_slow_body(drip_body: bool) -> 
                 await asyncio.sleep(0.005)
 
     async with serve(handler) as url:
-        report = await run_mode(Config(url, 3, 2, 0.08, 0), "bm25", ["timeout"])
+        # Allow loopback connection setup on Windows before asserting that the
+        # streaming response's headers arrived. The 5 ms drip still cannot
+        # evade the 500 ms total deadline, unlike a per-read timeout.
+        report = await run_mode(Config(url, 3, 2, 0.5, 0), "bm25", ["timeout"])
     summary = report["summary"]
     assert summary["outcomes"] == {"timeout": 3}, report["requests"]
     assert summary["timeout_rate"] == 1.0
     assert summary["success_latency"]["p99_ms"] is None
     assert summary["all_latency"]["count"] == 3
-    assert summary["elapsed_seconds"] < 1.5
-    assert all(row["elapsed_ms"] >= 60 for row in report["requests"])
+    assert summary["elapsed_seconds"] < 3
+    assert all(row["elapsed_ms"] >= 400 for row in report["requests"])
     assert all(row["status_code"] == (200 if drip_body else None) for row in report["requests"])
 
 

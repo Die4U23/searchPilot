@@ -1,0 +1,4988 @@
+{
+  "schema_version": 1,
+  "harness_status": "COMPLETED",
+  "ledger_status": "PASSED",
+  "ledger_issues": [],
+  "ledger_phases": {
+    "warmup": {
+      "issued": 16,
+      "paired": 16,
+      "success": 16,
+      "failed": 0,
+      "unknown": 0,
+      "success_rate": 1.0,
+      "outcomes": {
+        "success": 16
+      },
+      "unknown_request_ids": [],
+      "failed_request_ids": [],
+      "empty_successes": 0,
+      "latency_all_completed": {
+        "count": 16,
+        "p50_ms": 117.98540000017965,
+        "p95_ms": 162.24220000003697,
+        "p99_ms": 162.24220000003697,
+        "max_ms": 162.24220000003697
+      },
+      "latency_success": {
+        "count": 16,
+        "p50_ms": 117.98540000017965,
+        "p95_ms": 162.24220000003697,
+        "p99_ms": 162.24220000003697,
+        "max_ms": 162.24220000003697
+      },
+      "completed_without_valid_latency": 0,
+      "by_mode": {
+        "bm25": {
+          "issued": 4,
+          "paired": 4,
+          "success": 4,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 4
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 4,
+            "p50_ms": 5.191199999899254,
+            "p95_ms": 31.26109999993787,
+            "p99_ms": 31.26109999993787,
+            "max_ms": 31.26109999993787
+          },
+          "latency_success": {
+            "count": 4,
+            "p50_ms": 5.191199999899254,
+            "p95_ms": 31.26109999993787,
+            "p99_ms": 31.26109999993787,
+            "max_ms": 31.26109999993787
+          },
+          "completed_without_valid_latency": 0
+        },
+        "vector": {
+          "issued": 4,
+          "paired": 4,
+          "success": 4,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 4
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 4,
+            "p50_ms": 117.98540000017965,
+            "p95_ms": 124.96569999984786,
+            "p99_ms": 124.96569999984786,
+            "max_ms": 124.96569999984786
+          },
+          "latency_success": {
+            "count": 4,
+            "p50_ms": 117.98540000017965,
+            "p95_ms": 124.96569999984786,
+            "p99_ms": 124.96569999984786,
+            "max_ms": 124.96569999984786
+          },
+          "completed_without_valid_latency": 0
+        },
+        "hybrid": {
+          "issued": 4,
+          "paired": 4,
+          "success": 4,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 4
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 4,
+            "p50_ms": 141.26060000035068,
+            "p95_ms": 144.4963000003554,
+            "p99_ms": 144.4963000003554,
+            "max_ms": 144.4963000003554
+          },
+          "latency_success": {
+            "count": 4,
+            "p50_ms": 141.26060000035068,
+            "p95_ms": 144.4963000003554,
+            "p99_ms": 144.4963000003554,
+            "max_ms": 144.4963000003554
+          },
+          "completed_without_valid_latency": 0
+        },
+        "ltr": {
+          "issued": 4,
+          "paired": 4,
+          "success": 4,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 4
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 4,
+            "p50_ms": 126.96210000012798,
+            "p95_ms": 162.24220000003697,
+            "p99_ms": 162.24220000003697,
+            "max_ms": 162.24220000003697
+          },
+          "latency_success": {
+            "count": 4,
+            "p50_ms": 126.96210000012798,
+            "p95_ms": 162.24220000003697,
+            "p99_ms": 162.24220000003697,
+            "max_ms": 162.24220000003697
+          },
+          "completed_without_valid_latency": 0
+        }
+      }
+    },
+    "measured": {
+      "issued": 53650,
+      "paired": 53650,
+      "success": 53650,
+      "failed": 0,
+      "unknown": 0,
+      "success_rate": 1.0,
+      "outcomes": {
+        "success": 53650
+      },
+      "unknown_request_ids": [],
+      "failed_request_ids": [],
+      "empty_successes": 0,
+      "latency_all_completed": {
+        "count": 53650,
+        "p50_ms": 313.2329000000027,
+        "p95_ms": 453.82489999974496,
+        "p99_ms": 512.9393999995955,
+        "max_ms": 758.2251000003453
+      },
+      "latency_success": {
+        "count": 53650,
+        "p50_ms": 313.2329000000027,
+        "p95_ms": 453.82489999974496,
+        "p99_ms": 512.9393999995955,
+        "max_ms": 758.2251000003453
+      },
+      "completed_without_valid_latency": 0,
+      "by_mode": {
+        "bm25": {
+          "issued": 13413,
+          "paired": 13413,
+          "success": 13413,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 13413
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 13413,
+            "p50_ms": 23.35750000020198,
+            "p95_ms": 83.813199999895,
+            "p99_ms": 122.98109999937878,
+            "max_ms": 202.96509999934642
+          },
+          "latency_success": {
+            "count": 13413,
+            "p50_ms": 23.35750000020198,
+            "p95_ms": 83.813199999895,
+            "p99_ms": 122.98109999937878,
+            "max_ms": 202.96509999934642
+          },
+          "completed_without_valid_latency": 0
+        },
+        "vector": {
+          "issued": 13413,
+          "paired": 13413,
+          "success": 13413,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 13413
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 13413,
+            "p50_ms": 313.2733999991615,
+            "p95_ms": 416.70280000016646,
+            "p99_ms": 468.6643000004551,
+            "max_ms": 623.3501999995497
+          },
+          "latency_success": {
+            "count": 13413,
+            "p50_ms": 313.2733999991615,
+            "p95_ms": 416.70280000016646,
+            "p99_ms": 468.6643000004551,
+            "max_ms": 623.3501999995497
+          },
+          "completed_without_valid_latency": 0
+        },
+        "hybrid": {
+          "issued": 13412,
+          "paired": 13412,
+          "success": 13412,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 13412
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 13412,
+            "p50_ms": 332.4755000003279,
+            "p95_ms": 445.5422000000908,
+            "p99_ms": 498.53780000012193,
+            "max_ms": 667.3129000000699
+          },
+          "latency_success": {
+            "count": 13412,
+            "p50_ms": 332.4755000003279,
+            "p95_ms": 445.5422000000908,
+            "p99_ms": 498.53780000012193,
+            "max_ms": 667.3129000000699
+          },
+          "completed_without_valid_latency": 0
+        },
+        "ltr": {
+          "issued": 13412,
+          "paired": 13412,
+          "success": 13412,
+          "failed": 0,
+          "unknown": 0,
+          "success_rate": 1.0,
+          "outcomes": {
+            "success": 13412
+          },
+          "unknown_request_ids": [],
+          "failed_request_ids": [],
+          "empty_successes": 0,
+          "latency_all_completed": {
+            "count": 13412,
+            "p50_ms": 386.2979000004998,
+            "p95_ms": 494.240400000308,
+            "p99_ms": 551.1111999994682,
+            "max_ms": 758.2251000003453
+          },
+          "latency_success": {
+            "count": 13412,
+            "p50_ms": 386.2979000004998,
+            "p95_ms": 494.240400000308,
+            "p99_ms": 551.1111999994682,
+            "max_ms": 758.2251000003453
+          },
+          "completed_without_valid_latency": 0
+        }
+      }
+    }
+  },
+  "started_at": "2026-10-25T04:11:30.171764+00:00",
+  "finished_at": "2026-10-25T05:11:30.374858+00:00",
+  "summary": {
+    "total": 53650,
+    "successes": 53650,
+    "failures": 0,
+    "success_rate": 1.0,
+    "timeout_rate": 0.0,
+    "outcomes": {
+      "success": 53650
+    },
+    "status_codes": {
+      "200": 53650
+    },
+    "elapsed_seconds": 3600.2030419000002,
+    "completed_requests_per_second": 14.90193730064911,
+    "successful_requests_per_second": 14.90193730064911,
+    "success_latency": {
+      "count": 53650,
+      "p50_ms": 313.2329000000027,
+      "p95_ms": 453.82489999974496,
+      "p99_ms": 512.9393999995955,
+      "max_ms": 758.2251000003453
+    },
+    "all_latency": {
+      "count": 53650,
+      "p50_ms": 313.2329000000027,
+      "p95_ms": 453.82489999974496,
+      "p99_ms": 512.9393999995955,
+      "max_ms": 758.2251000003453
+    },
+    "model_versions": [
+      "bm25-4f46b3d8",
+      "hybrid-51d4dcfb",
+      "ltr-4574f8f4",
+      "vector-b92663fd"
+    ],
+    "empty_successes": 0
+  },
+  "by_mode": {
+    "bm25": {
+      "total": 13413,
+      "successes": 13413,
+      "failures": 0,
+      "success_rate": 1.0,
+      "timeout_rate": 0.0,
+      "outcomes": {
+        "success": 13413
+      },
+      "status_codes": {
+        "200": 13413
+      },
+      "elapsed_seconds": 3600.2030419000002,
+      "completed_requests_per_second": 3.7256232062182013,
+      "successful_requests_per_second": 3.7256232062182013,
+      "success_latency": {
+        "count": 13413,
+        "p50_ms": 23.35750000020198,
+        "p95_ms": 83.813199999895,
+        "p99_ms": 122.98109999937878,
+        "max_ms": 202.96509999934642
+      },
+      "all_latency": {
+        "count": 13413,
+        "p50_ms": 23.35750000020198,
+        "p95_ms": 83.813199999895,
+        "p99_ms": 122.98109999937878,
+        "max_ms": 202.96509999934642
+      },
+      "model_versions": [
+        "bm25-4f46b3d8"
+      ],
+      "empty_successes": 0
+    },
+    "vector": {
+      "total": 13413,
+      "successes": 13413,
+      "failures": 0,
+      "success_rate": 1.0,
+      "timeout_rate": 0.0,
+      "outcomes": {
+        "success": 13413
+      },
+      "status_codes": {
+        "200": 13413
+      },
+      "elapsed_seconds": 3600.2030419000002,
+      "completed_requests_per_second": 3.7256232062182013,
+      "successful_requests_per_second": 3.7256232062182013,
+      "success_latency": {
+        "count": 13413,
+        "p50_ms": 313.2733999991615,
+        "p95_ms": 416.70280000016646,
+        "p99_ms": 468.6643000004551,
+        "max_ms": 623.3501999995497
+      },
+      "all_latency": {
+        "count": 13413,
+        "p50_ms": 313.2733999991615,
+        "p95_ms": 416.70280000016646,
+        "p99_ms": 468.6643000004551,
+        "max_ms": 623.3501999995497
+      },
+      "model_versions": [
+        "vector-b92663fd"
+      ],
+      "empty_successes": 0
+    },
+    "hybrid": {
+      "total": 13412,
+      "successes": 13412,
+      "failures": 0,
+      "success_rate": 1.0,
+      "timeout_rate": 0.0,
+      "outcomes": {
+        "success": 13412
+      },
+      "status_codes": {
+        "200": 13412
+      },
+      "elapsed_seconds": 3600.2030419000002,
+      "completed_requests_per_second": 3.7253454441063534,
+      "successful_requests_per_second": 3.7253454441063534,
+      "success_latency": {
+        "count": 13412,
+        "p50_ms": 332.4755000003279,
+        "p95_ms": 445.5422000000908,
+        "p99_ms": 498.53780000012193,
+        "max_ms": 667.3129000000699
+      },
+      "all_latency": {
+        "count": 13412,
+        "p50_ms": 332.4755000003279,
+        "p95_ms": 445.5422000000908,
+        "p99_ms": 498.53780000012193,
+        "max_ms": 667.3129000000699
+      },
+      "model_versions": [
+        "hybrid-51d4dcfb"
+      ],
+      "empty_successes": 0
+    },
+    "ltr": {
+      "total": 13412,
+      "successes": 13412,
+      "failures": 0,
+      "success_rate": 1.0,
+      "timeout_rate": 0.0,
+      "outcomes": {
+        "success": 13412
+      },
+      "status_codes": {
+        "200": 13412
+      },
+      "elapsed_seconds": 3600.2030419000002,
+      "completed_requests_per_second": 3.7253454441063534,
+      "successful_requests_per_second": 3.7253454441063534,
+      "success_latency": {
+        "count": 13412,
+        "p50_ms": 386.2979000004998,
+        "p95_ms": 494.240400000308,
+        "p99_ms": 551.1111999994682,
+        "max_ms": 758.2251000003453
+      },
+      "all_latency": {
+        "count": 13412,
+        "p50_ms": 386.2979000004998,
+        "p95_ms": 494.240400000308,
+        "p99_ms": 551.1111999994682,
+        "max_ms": 758.2251000003453
+      },
+      "model_versions": [
+        "ltr-4574f8f4"
+      ],
+      "empty_successes": 0
+    }
+  },
+  "peak_in_flight_reconstructed": 4,
+  "pending_at_end": [],
+  "outcomes": {
+    "warmup:success": 16,
+    "measured:success": 53650
+  },
+  "startup_seconds": 33.780596499999774,
+  "business_checks": {
+    "completed": 17
+  },
+  "business_status_codes": {
+    "200": 12,
+    "201": 3,
+    "409": 1,
+    "404": 1
+  },
+  "database_initial": {
+    "schema_migrations": 5,
+    "items": 65238,
+    "queries": 100,
+    "relevance_labels": 1012,
+    "model_versions": 7,
+    "agent_tasks": 50,
+    "bids": 65238,
+    "experiments": 6,
+    "feedback_events": 0
+  },
+  "database_final": {
+    "schema_migrations": 5,
+    "items": 65238,
+    "queries": 100,
+    "relevance_labels": 1012,
+    "model_versions": 7,
+    "agent_tasks": 50,
+    "bids": 65238,
+    "experiments": 6,
+    "feedback_events": 1
+  },
+  "image": "sha256:a97dc62115f0b617d962423739a45f71dfc7a93ec05c4e055575fe7d65a710d1",
+  "packages": {
+    "searchpilot": "0.1.0",
+    "torch": "2.14.1+cpu",
+    "sentence-transformers": "6.2.0",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "fastapi": "0.159.1",
+    "uvicorn": "0.54.0",
+    "psycopg": "3.3.6"
+  },
+  "engine": {
+    "cpus": 12,
+    "memory_bytes": 8171175936
+  },
+  "windows": [
+    {
+      "index": 0,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2534254592.0,
+        "anon": 2231609344.0,
+        "thp": 0.0,
+        "cgroup_anon": 2245341184.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 56778752.0
+      },
+      "mean_bytes": {
+        "rss": 2534045013.3333335,
+        "anon": 2231867255.4666667,
+        "thp": 0,
+        "cgroup_anon": 2245669410.133333,
+        "cgroup_file": 12288,
+        "client_rss": 56768512
+      }
+    },
+    {
+      "index": 1,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536632320.0,
+        "anon": 2233987072.0,
+        "thp": 0.0,
+        "cgroup_anon": 2247151616.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 60643328.0
+      },
+      "mean_bytes": {
+        "rss": 2536579754.6666665,
+        "anon": 2233934506.6666665,
+        "thp": 0,
+        "cgroup_anon": 2247464550.4,
+        "cgroup_file": 12288,
+        "client_rss": 60846762.666666664
+      }
+    },
+    {
+      "index": 2,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536491008.0,
+        "anon": 2233845760.0,
+        "thp": 0.0,
+        "cgroup_anon": 2247026688.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 64915456.0
+      },
+      "mean_bytes": {
+        "rss": 2536529237.3333335,
+        "anon": 2233883989.3333335,
+        "thp": 0,
+        "cgroup_anon": 2247365563.733333,
+        "cgroup_file": 12288,
+        "client_rss": 64961604.266666666
+      }
+    },
+    {
+      "index": 3,
+      "sample_count": 29,
+      "available_count": {
+        "rss": 29,
+        "anon": 29,
+        "thp": 29,
+        "cgroup_anon": 29,
+        "cgroup_file": 29,
+        "client_rss": 29
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536546304,
+        "anon": 2233901056,
+        "thp": 0,
+        "cgroup_anon": 2247069696,
+        "cgroup_file": 12288,
+        "client_rss": 69447680
+      },
+      "mean_bytes": {
+        "rss": 2536551671.172414,
+        "anon": 2233906423.172414,
+        "thp": 0,
+        "cgroup_anon": 2247527600.551724,
+        "cgroup_file": 12288,
+        "client_rss": 69445561.37931034
+      }
+    },
+    {
+      "index": 4,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536644608.0,
+        "anon": 2233999360.0,
+        "thp": 0.0,
+        "cgroup_anon": 2247168000.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 73709568.0
+      },
+      "mean_bytes": {
+        "rss": 2536604330.6666665,
+        "anon": 2233959082.6666665,
+        "thp": 0,
+        "cgroup_anon": 2247387272.5333333,
+        "cgroup_file": 12288,
+        "client_rss": 73709704.53333333
+      }
+    },
+    {
+      "index": 5,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536505344.0,
+        "anon": 2233860096.0,
+        "thp": 0.0,
+        "cgroup_anon": 2247036928.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 78092288.0
+      },
+      "mean_bytes": {
+        "rss": 2536543027.2,
+        "anon": 2233897779.2,
+        "thp": 0,
+        "cgroup_anon": 2247896405.3333335,
+        "cgroup_file": 12288,
+        "client_rss": 78088192
+      }
+    },
+    {
+      "index": 6,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2536648704.0,
+        "anon": 2234003456.0,
+        "thp": 0.0,
+        "cgroup_anon": 2247180288.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 82444288.0
+      },
+      "mean_bytes": {
+        "rss": 2537019255.4666667,
+        "anon": 2234374007.4666667,
+        "thp": 0,
+        "cgroup_anon": 2247814894.9333334,
+        "cgroup_file": 12288,
+        "client_rss": 82455756.8
+      }
+    },
+    {
+      "index": 7,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2537592832.0,
+        "anon": 2234947584.0,
+        "thp": 0.0,
+        "cgroup_anon": 2248116224.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 86816768.0
+      },
+      "mean_bytes": {
+        "rss": 2537742199.4666667,
+        "anon": 2235096951.4666667,
+        "thp": 0,
+        "cgroup_anon": 2248566237.866667,
+        "cgroup_file": 12288,
+        "client_rss": 86820317.86666666
+      }
+    },
+    {
+      "index": 8,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2538192896.0,
+        "anon": 2235547648.0,
+        "thp": 0.0,
+        "cgroup_anon": 2248732672.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 91146240.0
+      },
+      "mean_bytes": {
+        "rss": 2538319052.8,
+        "anon": 2235673804.8,
+        "thp": 0,
+        "cgroup_anon": 2249168759.4666667,
+        "cgroup_file": 12288,
+        "client_rss": 91267208.53333333
+      }
+    },
+    {
+      "index": 9,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2538631168.0,
+        "anon": 2235985920.0,
+        "thp": 0.0,
+        "cgroup_anon": 2249187328.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 95834112.0
+      },
+      "mean_bytes": {
+        "rss": 2538703394.133333,
+        "anon": 2236058146.133333,
+        "thp": 0,
+        "cgroup_anon": 2249645533.866667,
+        "cgroup_file": 12288,
+        "client_rss": 95915349.33333333
+      }
+    },
+    {
+      "index": 10,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2538909696.0,
+        "anon": 2236264448.0,
+        "thp": 0.0,
+        "cgroup_anon": 2249428992.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 100612096.0
+      },
+      "mean_bytes": {
+        "rss": 2538870374.4,
+        "anon": 2236225126.4,
+        "thp": 0,
+        "cgroup_anon": 2249591876.266667,
+        "cgroup_file": 12288,
+        "client_rss": 100597077.33333333
+      }
+    },
+    {
+      "index": 11,
+      "sample_count": 30,
+      "available_count": {
+        "rss": 30,
+        "anon": 30,
+        "thp": 30,
+        "cgroup_anon": 30,
+        "cgroup_file": 30,
+        "client_rss": 30
+      },
+      "missing_count": {
+        "rss": 0,
+        "anon": 0,
+        "thp": 0,
+        "cgroup_anon": 0,
+        "cgroup_file": 0,
+        "client_rss": 0
+      },
+      "median_bytes": {
+        "rss": 2538831872.0,
+        "anon": 2236186624.0,
+        "thp": 0.0,
+        "cgroup_anon": 2249361408.0,
+        "cgroup_file": 12288.0,
+        "client_rss": 104886272.0
+      },
+      "mean_bytes": {
+        "rss": 2538856857.6,
+        "anon": 2236211609.6,
+        "thp": 0,
+        "cgroup_anon": 2249833130.6666665,
+        "cgroup_file": 12288,
+        "client_rss": 104909073.06666666
+      }
+    }
+  ],
+  "resources": {
+    "provided": true,
+    "interpretation": "Descriptive discrete samples; no leak threshold or resource pass/fail. Top-level status covers ledger/benchmark acceptance only. Missing is not zero. Windows approximately align sample.at to run.started_at; sources and probes are not atomic. Process RSS/PSS, cgroup memory and client memory have different scopes. First/last use timestamped observations; extrema include untimed values. Mixed process identities invalidate counter deltas; extrema may span processes. OOM delta requires two counter observations, consistent PID1 identity, unchanged membership path and no decrease; missing/unsampled intervals and cgroup recreation cannot prove absence of OOM.",
+    "anchor_started_at": "2026-10-25T04:11:30.171764+00:00",
+    "coverage": {
+      "sample_rows": 386,
+      "aligned_to_measured_windows": 359,
+      "outside_measured_window": 27,
+      "unaligned": 0,
+      "timestamp_available": 386,
+      "timestamp_missing": 0,
+      "max_interval_seconds": 10.029265880584717
+    },
+    "errors": {
+      "server:CalledProcessError": 1,
+      "stats:CalledProcessError": 1
+    },
+    "input_errors": [],
+    "overall": {
+      "sample_rows": 386,
+      "coverage": {
+        "timestamp_available": 386,
+        "timestamp_missing": 0,
+        "max_interval_seconds": 10.029265880584717
+      },
+      "metrics": {
+        "pid1_rss_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 129130496,
+          "last": 2630295552,
+          "min": 129130496,
+          "max": 2630295552
+        },
+        "pid1_pss_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 98592768,
+          "last": 2626689024,
+          "min": 98592768,
+          "max": 2626689024
+        },
+        "pid1_anonymous_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 64499712,
+          "last": 2351214592,
+          "min": 64499712,
+          "max": 2351214592
+        },
+        "pid1_private_dirty_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 64499712,
+          "last": 2351218688,
+          "min": 64499712,
+          "max": 2351218688
+        },
+        "pid1_status_rss_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 129130496,
+          "last": 2630295552,
+          "min": 129130496,
+          "max": 2630295552
+        },
+        "pid1_fd_count": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 3,
+          "last": 14,
+          "min": 3,
+          "max": 21
+        },
+        "pid1_thread_count": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 13,
+          "last": 64,
+          "min": 13,
+          "max": 100
+        },
+        "cgroup_current_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 170430464,
+          "last": 2408058880,
+          "min": 170430464,
+          "max": 2408058880
+        },
+        "cgroup_anon_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 163688448,
+          "last": 2364383232,
+          "min": 163688448,
+          "max": 2364383232
+        },
+        "cgroup_file_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 0,
+          "last": 4096,
+          "min": 0,
+          "max": 12288
+        },
+        "cgroup_kernel_bytes": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 4968448,
+          "last": 42172416,
+          "min": 4632576,
+          "max": 43872256
+        },
+        "client_rss_bytes": {
+          "available": 361,
+          "missing": 25,
+          "available_without_timestamp": 0,
+          "first": 54235136,
+          "last": 199602176,
+          "min": 54235136,
+          "max": 199602176
+        },
+        "client_private_bytes": {
+          "available": 361,
+          "missing": 25,
+          "available_without_timestamp": 0,
+          "first": 36622336,
+          "last": 184385536,
+          "min": 36622336,
+          "max": 184385536
+        }
+      },
+      "identity": {
+        "consistent": 385,
+        "inconsistent": 0,
+        "unknown": 1,
+        "start_time_ticks_unique": [
+          316977,
+          699402
+        ],
+        "start_time_ticks_missing": 1,
+        "server_pids": [
+          1
+        ],
+        "client_pids": [
+          17984
+        ],
+        "single_consistent_pid1_observed": false,
+        "cgroup_membership_paths": [
+          "/"
+        ],
+        "cgroup_membership_missing": 1
+      },
+      "memory_events": {
+        "oom": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 0,
+          "last": 0,
+          "min": 0,
+          "max": 0,
+          "counter_decreases": 0,
+          "delta": null,
+          "delta_available": false
+        },
+        "oom_kill": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 0,
+          "last": 0,
+          "min": 0,
+          "max": 0,
+          "counter_decreases": 0,
+          "delta": null,
+          "delta_available": false
+        },
+        "oom_group_kill": {
+          "available": 385,
+          "missing": 1,
+          "available_without_timestamp": 0,
+          "first": 0,
+          "last": 0,
+          "min": 0,
+          "max": 0,
+          "counter_decreases": 0,
+          "delta": null,
+          "delta_available": false
+        }
+      },
+      "health": {
+        "live": {
+          "available": 379,
+          "missing": 0,
+          "status_200": 379,
+          "http_errors": 0,
+          "transport_errors": 7,
+          "status_codes": {
+            "200": 379
+          },
+          "error_types": {
+            "ConnectError": 1,
+            "RemoteProtocolError": 6
+          }
+        },
+        "ready": {
+          "available": 379,
+          "missing": 0,
+          "status_200": 379,
+          "http_errors": 0,
+          "transport_errors": 7,
+          "status_codes": {
+            "200": 379
+          },
+          "error_types": {
+            "ConnectError": 1,
+            "RemoteProtocolError": 6
+          }
+        }
+      },
+      "errors": {
+        "server:CalledProcessError": 1,
+        "stats:CalledProcessError": 1
+      }
+    },
+    "by_phase": {
+      "baseline": {
+        "sample_rows": 6,
+        "coverage": {
+          "timestamp_available": 6,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.01932406425476
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2508140544,
+            "last": 2508144640,
+            "min": 2508140544,
+            "max": 2508165120
+          },
+          "pid1_pss_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2504562688,
+            "last": 2504544256,
+            "min": 2504544256,
+            "max": 2504587264
+          },
+          "pid1_anonymous_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2228068352,
+            "last": 2228006912,
+            "min": 2228002816,
+            "max": 2228092928
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2228072448,
+            "last": 2228011008,
+            "min": 2228006912,
+            "max": 2228097024
+          },
+          "pid1_status_rss_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2508140544,
+            "last": 2508144640,
+            "min": 2508140544,
+            "max": 2508165120
+          },
+          "pid1_fd_count": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 16,
+            "last": 16,
+            "min": 16,
+            "max": 16
+          },
+          "pid1_thread_count": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 70,
+            "last": 66,
+            "min": 65,
+            "max": 71
+          },
+          "cgroup_current_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2285158400,
+            "last": 2284990464,
+            "min": 2284867584,
+            "max": 2285416448
+          },
+          "cgroup_anon_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2241236992,
+            "last": 2241175552,
+            "min": 2241171456,
+            "max": 2241273856
+          },
+          "cgroup_file_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 42340352,
+            "last": 42233856,
+            "min": 42201088,
+            "max": 42373120
+          },
+          "client_rss_bytes": {
+            "available": 0,
+            "missing": 6,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          },
+          "client_private_bytes": {
+            "available": 0,
+            "missing": 6,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          }
+        },
+        "identity": {
+          "consistent": 6,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 6,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 6,
+            "missing": 0,
+            "status_200": 6,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 6
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 6,
+            "missing": 0,
+            "status_200": 6,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 6
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      "load": {
+        "sample_rows": 361,
+        "coverage": {
+          "timestamp_available": 361,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.029265880584717
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2509516800,
+            "last": 2538921984,
+            "min": 2509516800,
+            "max": 2538921984
+          },
+          "pid1_pss_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2505926656,
+            "last": 2535286784,
+            "min": 2505926656,
+            "max": 2535385088
+          },
+          "pid1_anonymous_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2228133888,
+            "last": 2236276736,
+            "min": 2228133888,
+            "max": 2236276736
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2228137984,
+            "last": 2236280832,
+            "min": 2228137984,
+            "max": 2236280832
+          },
+          "pid1_status_rss_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2509512704,
+            "last": 2538921984,
+            "min": 2509512704,
+            "max": 2538921984
+          },
+          "pid1_fd_count": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 17,
+            "last": 16,
+            "min": 16,
+            "max": 21
+          },
+          "pid1_thread_count": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 72,
+            "last": 100,
+            "min": 72,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2285039616,
+            "last": 2294042624,
+            "min": 2285039616,
+            "max": 2308448256
+          },
+          "cgroup_anon_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2241302528,
+            "last": 2249449472,
+            "min": 2241302528,
+            "max": 2263068672
+          },
+          "cgroup_file_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 42430464,
+            "last": 43380736,
+            "min": 42430464,
+            "max": 43872256
+          },
+          "client_rss_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 54235136,
+            "last": 199602176,
+            "min": 54235136,
+            "max": 199602176
+          },
+          "client_private_bytes": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 36622336,
+            "last": 184385536,
+            "min": 36622336,
+            "max": 184385536
+          }
+        },
+        "identity": {
+          "consistent": 361,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 361,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 361,
+            "missing": 0,
+            "status_200": 361,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 361
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 361,
+            "missing": 0,
+            "status_200": 361,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 361
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      "recovery": {
+        "sample_rows": 12,
+        "coverage": {
+          "timestamp_available": 12,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.020260095596313
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538082304,
+            "last": 2537922560,
+            "min": 2537922560,
+            "max": 2538082304
+          },
+          "pid1_pss_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2534447104,
+            "last": 2534332416,
+            "min": 2534209536,
+            "max": 2534447104
+          },
+          "pid1_anonymous_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235437056,
+            "last": 2235277312,
+            "min": 2235277312,
+            "max": 2235437056
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235441152,
+            "last": 2235281408,
+            "min": 2235281408,
+            "max": 2235441152
+          },
+          "pid1_status_rss_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538082304,
+            "last": 2537922560,
+            "min": 2537922560,
+            "max": 2538082304
+          },
+          "pid1_fd_count": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 16,
+            "last": 16,
+            "min": 16,
+            "max": 16
+          },
+          "pid1_thread_count": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 71,
+            "last": 66,
+            "min": 66,
+            "max": 71
+          },
+          "cgroup_current_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292752384,
+            "last": 2292891648,
+            "min": 2291994624,
+            "max": 2293047296
+          },
+          "cgroup_anon_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2248609792,
+            "last": 2248441856,
+            "min": 2248441856,
+            "max": 2248609792
+          },
+          "cgroup_file_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 42508288,
+            "last": 42340352,
+            "min": 42336256,
+            "max": 42508288
+          },
+          "client_rss_bytes": {
+            "available": 0,
+            "missing": 12,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          },
+          "client_private_bytes": {
+            "available": 0,
+            "missing": 12,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          }
+        },
+        "identity": {
+          "consistent": 12,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 12,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 12,
+            "missing": 0,
+            "status_200": 12,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 12
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 12,
+            "missing": 0,
+            "status_200": 12,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 12
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      "restart": {
+        "sample_rows": 3,
+        "coverage": {
+          "timestamp_available": 3,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.015225172042847
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 449396736,
+            "last": 2630295552,
+            "min": 449396736,
+            "max": 2630295552
+          },
+          "pid1_pss_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 445853696,
+            "last": 2626689024,
+            "min": 445853696,
+            "max": 2626689024
+          },
+          "pid1_anonymous_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 389681152,
+            "last": 2351214592,
+            "min": 389681152,
+            "max": 2351214592
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 389681152,
+            "last": 2351218688,
+            "min": 389681152,
+            "max": 2351218688
+          },
+          "pid1_status_rss_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 449187840,
+            "last": 2630295552,
+            "min": 449187840,
+            "max": 2630295552
+          },
+          "pid1_fd_count": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 11,
+            "last": 14,
+            "min": 11,
+            "max": 14
+          },
+          "pid1_thread_count": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 13,
+            "last": 64,
+            "min": 13,
+            "max": 64
+          },
+          "cgroup_current_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 409776128,
+            "last": 2408058880,
+            "min": 409776128,
+            "max": 2408058880
+          },
+          "cgroup_anon_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 403517440,
+            "last": 2364383232,
+            "min": 403517440,
+            "max": 2364383232
+          },
+          "cgroup_file_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 4096,
+            "min": 0,
+            "max": 4096
+          },
+          "cgroup_kernel_bytes": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 4632576,
+            "last": 42172416,
+            "min": 4632576,
+            "max": 42172416
+          },
+          "client_rss_bytes": {
+            "available": 0,
+            "missing": 3,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          },
+          "client_private_bytes": {
+            "available": 0,
+            "missing": 3,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          }
+        },
+        "identity": {
+          "consistent": 3,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            699402
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 3,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 0,
+            "missing": 0,
+            "status_200": 0,
+            "http_errors": 0,
+            "transport_errors": 3,
+            "status_codes": {},
+            "error_types": {
+              "RemoteProtocolError": 3
+            }
+          },
+          "ready": {
+            "available": 0,
+            "missing": 0,
+            "status_200": 0,
+            "http_errors": 0,
+            "transport_errors": 3,
+            "status_codes": {},
+            "error_types": {
+              "RemoteProtocolError": 3
+            }
+          }
+        },
+        "errors": {}
+      },
+      "startup": {
+        "sample_rows": 4,
+        "coverage": {
+          "timestamp_available": 4,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.025634050369263
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 129130496,
+            "last": 2387951616,
+            "min": 129130496,
+            "max": 2387951616
+          },
+          "pid1_pss_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 98592768,
+            "last": 2384355328,
+            "min": 98592768,
+            "max": 2384355328
+          },
+          "pid1_anonymous_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 64499712,
+            "last": 2115129344,
+            "min": 64499712,
+            "max": 2115129344
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 64499712,
+            "last": 2115133440,
+            "min": 64499712,
+            "max": 2115133440
+          },
+          "pid1_status_rss_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 129130496,
+            "last": 2387947520,
+            "min": 129130496,
+            "max": 2387947520
+          },
+          "pid1_fd_count": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 3,
+            "last": 11,
+            "min": 3,
+            "max": 11
+          },
+          "pid1_thread_count": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 13,
+            "last": 56,
+            "min": 13,
+            "max": 56
+          },
+          "cgroup_current_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 170430464,
+            "last": 2171269120,
+            "min": 170430464,
+            "max": 2171269120
+          },
+          "cgroup_anon_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 163688448,
+            "last": 2128297984,
+            "min": 163688448,
+            "max": 2128297984
+          },
+          "cgroup_file_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 4096,
+            "min": 0,
+            "max": 4096
+          },
+          "cgroup_kernel_bytes": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 4968448,
+            "last": 41345024,
+            "min": 4968448,
+            "max": 41345024
+          },
+          "client_rss_bytes": {
+            "available": 0,
+            "missing": 4,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          },
+          "client_private_bytes": {
+            "available": 0,
+            "missing": 4,
+            "available_without_timestamp": 0,
+            "first": null,
+            "last": null,
+            "min": null,
+            "max": null
+          }
+        },
+        "identity": {
+          "consistent": 3,
+          "inconsistent": 0,
+          "unknown": 1,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 1,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [],
+          "single_consistent_pid1_observed": false,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 1
+        },
+        "memory_events": {
+          "oom": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": null,
+            "delta_available": false
+          },
+          "oom_kill": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": null,
+            "delta_available": false
+          },
+          "oom_group_kill": {
+            "available": 3,
+            "missing": 1,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": null,
+            "delta_available": false
+          }
+        },
+        "health": {
+          "live": {
+            "available": 0,
+            "missing": 0,
+            "status_200": 0,
+            "http_errors": 0,
+            "transport_errors": 4,
+            "status_codes": {},
+            "error_types": {
+              "ConnectError": 1,
+              "RemoteProtocolError": 3
+            }
+          },
+          "ready": {
+            "available": 0,
+            "missing": 0,
+            "status_200": 0,
+            "http_errors": 0,
+            "transport_errors": 4,
+            "status_codes": {},
+            "error_types": {
+              "ConnectError": 1,
+              "RemoteProtocolError": 3
+            }
+          }
+        },
+        "errors": {
+          "server:CalledProcessError": 1,
+          "stats:CalledProcessError": 1
+        }
+      }
+    },
+    "windows": [
+      {
+        "index": 0,
+        "start_seconds": 0.0,
+        "end_seconds": 300.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.023369073867798
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2521616384,
+            "last": 2536370176,
+            "min": 2521616384,
+            "max": 2536443904
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2518013952,
+            "last": 2531660800,
+            "min": 2518013952,
+            "max": 2532853760
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2229653504,
+            "last": 2233724928,
+            "min": 2229653504,
+            "max": 2233798656
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2229657600,
+            "last": 2233729024,
+            "min": 2229657600,
+            "max": 2233802752
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2521616384,
+            "last": 2536370176,
+            "min": 2521616384,
+            "max": 2536443904
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 95,
+            "min": 94,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2287693824,
+            "last": 2301202432,
+            "min": 2287693824,
+            "max": 2301202432
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2242822144,
+            "last": 2255859712,
+            "min": 2242822144,
+            "max": 2255859712
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43220992,
+            "last": 43458560,
+            "min": 43212800,
+            "max": 43552768
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 54456320,
+            "last": 59092992,
+            "min": 54456320,
+            "max": 59092992
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 36622336,
+            "last": 41259008,
+            "min": 36622336,
+            "max": 41259008
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 1,
+        "start_seconds": 300.0,
+        "end_seconds": 600.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.022239923477173
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536443904,
+            "last": 2536632320,
+            "min": 2536361984,
+            "max": 2536632320
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2532823040,
+            "last": 2533060608,
+            "min": 2529909760,
+            "max": 2533083136
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233798656,
+            "last": 2233987072,
+            "min": 2233716736,
+            "max": 2233987072
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233802752,
+            "last": 2233991168,
+            "min": 2233720832,
+            "max": 2233991168
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536443904,
+            "last": 2536632320,
+            "min": 2536361984,
+            "max": 2536632320
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 100,
+            "min": 90,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292453376,
+            "last": 2292264960,
+            "min": 2291781632,
+            "max": 2303385600
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2246967296,
+            "last": 2247155712,
+            "min": 2246901760,
+            "max": 2258055168
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43384832,
+            "last": 43384832,
+            "min": 43094016,
+            "max": 43581440
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 59248640,
+            "last": 62713856,
+            "min": 59248640,
+            "max": 62713856
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 41259008,
+            "last": 45461504,
+            "min": 41259008,
+            "max": 45461504
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 2,
+        "start_seconds": 600.0,
+        "end_seconds": 900.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.022063970565796
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536570880,
+            "last": 2536476672,
+            "min": 2536366080,
+            "max": 2536636416
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2532933632,
+            "last": 2532841472,
+            "min": 2531800064,
+            "max": 2533081088
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233925632,
+            "last": 2233831424,
+            "min": 2233720832,
+            "max": 2233991168
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233929728,
+            "last": 2233835520,
+            "min": 2233724928,
+            "max": 2233995264
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536570880,
+            "last": 2536476672,
+            "min": 2536366080,
+            "max": 2536636416
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 95,
+            "min": 89,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292072448,
+            "last": 2292404224,
+            "min": 2291486720,
+            "max": 2301980672
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2247094272,
+            "last": 2247000064,
+            "min": 2246651904,
+            "max": 2257002496
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43253760,
+            "last": 43245568,
+            "min": 43081728,
+            "max": 43413504
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 62857216,
+            "last": 67137536,
+            "min": 62857216,
+            "max": 67137536
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 45461504,
+            "last": 49737728,
+            "min": 45461504,
+            "max": 49737728
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 3,
+        "start_seconds": 900.0,
+        "end_seconds": 1200.0,
+        "sample_rows": 29,
+        "coverage": {
+          "timestamp_available": 29,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.02282190322876
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536636416,
+            "last": 2536476672,
+            "min": 2536386560,
+            "max": 2536644608
+          },
+          "pid1_pss_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2533083136,
+            "last": 2532855808,
+            "min": 2529649664,
+            "max": 2533103616
+          },
+          "pid1_anonymous_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233991168,
+            "last": 2233831424,
+            "min": 2233741312,
+            "max": 2233999360
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233995264,
+            "last": 2233835520,
+            "min": 2233745408,
+            "max": 2234003456
+          },
+          "pid1_status_rss_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536636416,
+            "last": 2536476672,
+            "min": 2536386560,
+            "max": 2536644608
+          },
+          "pid1_fd_count": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 95,
+            "min": 89,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292531200,
+            "last": 2292056064,
+            "min": 2291576832,
+            "max": 2305761280
+          },
+          "cgroup_anon_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2247163904,
+            "last": 2246995968,
+            "min": 2246914048,
+            "max": 2260443136
+          },
+          "cgroup_file_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43401216,
+            "last": 43249664,
+            "min": 43077632,
+            "max": 43618304
+          },
+          "client_rss_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 67420160,
+            "last": 71471104,
+            "min": 67420160,
+            "max": 71471104
+          },
+          "client_private_bytes": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 49860608,
+            "last": 54026240,
+            "min": 49860608,
+            "max": 54026240
+          }
+        },
+        "identity": {
+          "consistent": 29,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 29,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 29,
+            "missing": 0,
+            "status_200": 29,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 29
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 29,
+            "missing": 0,
+            "status_200": 29,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 29
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 4,
+        "start_seconds": 1200.0,
+        "end_seconds": 1500.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.019783973693848
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536644608,
+            "last": 2536648704,
+            "min": 2536390656,
+            "max": 2536648704
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2533023744,
+            "last": 2533070848,
+            "min": 2531928064,
+            "max": 2533089280
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2233999360,
+            "last": 2234003456,
+            "min": 2233745408,
+            "max": 2234003456
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234003456,
+            "last": 2234007552,
+            "min": 2233749504,
+            "max": 2234007552
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536644608,
+            "last": 2536648704,
+            "min": 2536390656,
+            "max": 2536648704
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 100,
+            "min": 90,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292006912,
+            "last": 2292658176,
+            "min": 2291662848,
+            "max": 2300542976
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2247184384,
+            "last": 2247168000,
+            "min": 2246914048,
+            "max": 2254721024
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43397120,
+            "last": 43397120,
+            "min": 43110400,
+            "max": 43708416
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 71626752,
+            "last": 75804672,
+            "min": 71626752,
+            "max": 75804672
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 54026240,
+            "last": 58228736,
+            "min": 54026240,
+            "max": 58228736
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 5,
+        "start_seconds": 1500.0,
+        "end_seconds": 1800.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.026579856872559
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536648704,
+            "last": 2536648704,
+            "min": 2536488960,
+            "max": 2536648704
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2532990976,
+            "last": 2533013504,
+            "min": 2528703488,
+            "max": 2533046272
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234003456,
+            "last": 2234003456,
+            "min": 2233843712,
+            "max": 2234003456
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234007552,
+            "last": 2234007552,
+            "min": 2233847808,
+            "max": 2234007552
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536648704,
+            "last": 2536648704,
+            "min": 2536488960,
+            "max": 2536648704
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 21
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 100,
+            "min": 95,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292256768,
+            "last": 2292531200,
+            "min": 2291490816,
+            "max": 2306154496
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2247172096,
+            "last": 2247172096,
+            "min": 2246778880,
+            "max": 2260889600
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43388928,
+            "last": 43393024,
+            "min": 43216896,
+            "max": 43503616
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 75943936,
+            "last": 80220160,
+            "min": 75943936,
+            "max": 80220160
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 59281408,
+            "last": 63483904,
+            "min": 59281408,
+            "max": 63483904
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 6,
+        "start_seconds": 1800.0,
+        "end_seconds": 2100.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.026991844177246
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536648704,
+            "last": 2537549824,
+            "min": 2536398848,
+            "max": 2537623552
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2533058560,
+            "last": 2533894144,
+            "min": 2532761600,
+            "max": 2534066176
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234003456,
+            "last": 2234904576,
+            "min": 2233753600,
+            "max": 2234978304
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234007552,
+            "last": 2234908672,
+            "min": 2233757696,
+            "max": 2234982400
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2536648704,
+            "last": 2537549824,
+            "min": 2536398848,
+            "max": 2537623552
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 95,
+            "min": 89,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2292596736,
+            "last": 2293231616,
+            "min": 2291605504,
+            "max": 2301526016
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2247172096,
+            "last": 2248073216,
+            "min": 2246918144,
+            "max": 2256220160
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43388928,
+            "last": 43266048,
+            "min": 43073536,
+            "max": 43671552
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 80367616,
+            "last": 84553728,
+            "min": 80367616,
+            "max": 84553728
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 63483904,
+            "last": 67686400,
+            "min": 63483904,
+            "max": 67686400
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 7,
+        "start_seconds": 2100.0,
+        "end_seconds": 2400.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.027729034423828
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2537525248,
+            "last": 2538192896,
+            "min": 2537381888,
+            "max": 2538192896
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2533935104,
+            "last": 2534543360,
+            "min": 2532947968,
+            "max": 2534565888
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234880000,
+            "last": 2235547648,
+            "min": 2234736640,
+            "max": 2235547648
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2234884096,
+            "last": 2235551744,
+            "min": 2234740736,
+            "max": 2235551744
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2537525248,
+            "last": 2538192896,
+            "min": 2537381888,
+            "max": 2538192896
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 100,
+            "min": 90,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2293301248,
+            "last": 2293825536,
+            "min": 2292588544,
+            "max": 2303303680
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2248048640,
+            "last": 2248716288,
+            "min": 2247557120,
+            "max": 2257764352
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43257856,
+            "last": 43393024,
+            "min": 43110400,
+            "max": 43614208
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 84692992,
+            "last": 88952832,
+            "min": 84692992,
+            "max": 88952832
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 67686400,
+            "last": 71888896,
+            "min": 67686400,
+            "max": 71888896
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 8,
+        "start_seconds": 2400.0,
+        "end_seconds": 2700.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.023412942886353
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538106880,
+            "last": 2538532864,
+            "min": 2538024960,
+            "max": 2538618880
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2534469632,
+            "last": 2534975488,
+            "min": 2533496832,
+            "max": 2534998016
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235461632,
+            "last": 2235887616,
+            "min": 2235379712,
+            "max": 2235973632
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235465728,
+            "last": 2235891712,
+            "min": 2235383808,
+            "max": 2235977728
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538106880,
+            "last": 2538532864,
+            "min": 2538024960,
+            "max": 2538618880
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 95,
+            "min": 94,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2293817344,
+            "last": 2294566912,
+            "min": 2293473280,
+            "max": 2303799296
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2248609792,
+            "last": 2249052160,
+            "min": 2248544256,
+            "max": 2258472960
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43237376,
+            "last": 43266048,
+            "min": 43237376,
+            "max": 43569152
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 89096192,
+            "last": 93585408,
+            "min": 89096192,
+            "max": 93585408
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 71888896,
+            "last": 76443648,
+            "min": 71888896,
+            "max": 76443648
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 9,
+        "start_seconds": 2700.0,
+        "end_seconds": 3000.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.029265880584717
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538532864,
+            "last": 2538909696,
+            "min": 2538459136,
+            "max": 2538909696
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2534932480,
+            "last": 2535337984,
+            "min": 2531650560,
+            "max": 2535352320
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235887616,
+            "last": 2236264448,
+            "min": 2235813888,
+            "max": 2236264448
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2235891712,
+            "last": 2236268544,
+            "min": 2235817984,
+            "max": 2236268544
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538532864,
+            "last": 2538909696,
+            "min": 2538459136,
+            "max": 2538909696
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 100,
+            "min": 91,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2294198272,
+            "last": 2295177216,
+            "min": 2293682176,
+            "max": 2306490368
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2249052160,
+            "last": 2250244096,
+            "min": 2248978432,
+            "max": 2261053440
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43266048,
+            "last": 43872256,
+            "min": 43134976,
+            "max": 43872256
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 93728768,
+            "last": 98340864,
+            "min": 93728768,
+            "max": 98340864
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 76443648,
+            "last": 81047552,
+            "min": 76443648,
+            "max": 81047552
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 10,
+        "start_seconds": 3000.0,
+        "end_seconds": 3300.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.026307106018066
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538909696,
+            "last": 2538823680,
+            "min": 2538721280,
+            "max": 2538909696
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2535196672,
+            "last": 2535233536,
+            "min": 2533999616,
+            "max": 2535337984
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2236264448,
+            "last": 2236178432,
+            "min": 2236076032,
+            "max": 2236264448
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2236268544,
+            "last": 2236182528,
+            "min": 2236080128,
+            "max": 2236268544
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538909696,
+            "last": 2538823680,
+            "min": 2538721280,
+            "max": 2538909696
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 100,
+            "last": 95,
+            "min": 94,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2294775808,
+            "last": 2294317056,
+            "min": 2293739520,
+            "max": 2300928000
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2249449472,
+            "last": 2249347072,
+            "min": 2248863744,
+            "max": 2255630336
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43401216,
+            "last": 43253760,
+            "min": 43225088,
+            "max": 43634688
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 98496512,
+            "last": 102694912,
+            "min": 98496512,
+            "max": 102694912
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 81047552,
+            "last": 85250048,
+            "min": 81047552,
+            "max": 85250048
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      },
+      {
+        "index": 11,
+        "start_seconds": 3300.0,
+        "end_seconds": 3600.0,
+        "sample_rows": 30,
+        "coverage": {
+          "timestamp_available": 30,
+          "timestamp_missing": 0,
+          "max_interval_seconds": 10.023085117340088
+        },
+        "metrics": {
+          "pid1_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538823680,
+            "last": 2538827776,
+            "min": 2538749952,
+            "max": 2538921984
+          },
+          "pid1_pss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2535110656,
+            "last": 2535256064,
+            "min": 2530856960,
+            "max": 2535385088
+          },
+          "pid1_anonymous_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2236178432,
+            "last": 2236182528,
+            "min": 2236104704,
+            "max": 2236276736
+          },
+          "pid1_private_dirty_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2236182528,
+            "last": 2236186624,
+            "min": 2236108800,
+            "max": 2236280832
+          },
+          "pid1_status_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2538823680,
+            "last": 2538827776,
+            "min": 2538749952,
+            "max": 2538921984
+          },
+          "pid1_fd_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 20,
+            "last": 20,
+            "min": 20,
+            "max": 20
+          },
+          "pid1_thread_count": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 95,
+            "last": 95,
+            "min": 94,
+            "max": 100
+          },
+          "cgroup_current_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2294747136,
+            "last": 2293997568,
+            "min": 2293997568,
+            "max": 2308448256
+          },
+          "cgroup_anon_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 2249359360,
+            "last": 2249347072,
+            "min": 2249146368,
+            "max": 2263068672
+          },
+          "cgroup_file_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 12288,
+            "last": 12288,
+            "min": 12288,
+            "max": 12288
+          },
+          "cgroup_kernel_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 43249664,
+            "last": 43261952,
+            "min": 43233280,
+            "max": 43491328
+          },
+          "client_rss_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 102850560,
+            "last": 106991616,
+            "min": 102850560,
+            "max": 106991616
+          },
+          "client_private_bytes": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 86298624,
+            "last": 89452544,
+            "min": 86298624,
+            "max": 89452544
+          }
+        },
+        "identity": {
+          "consistent": 30,
+          "inconsistent": 0,
+          "unknown": 0,
+          "start_time_ticks_unique": [
+            316977
+          ],
+          "start_time_ticks_missing": 0,
+          "server_pids": [
+            1
+          ],
+          "client_pids": [
+            17984
+          ],
+          "single_consistent_pid1_observed": true,
+          "cgroup_membership_paths": [
+            "/"
+          ],
+          "cgroup_membership_missing": 0
+        },
+        "memory_events": {
+          "oom": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          },
+          "oom_group_kill": {
+            "available": 30,
+            "missing": 0,
+            "available_without_timestamp": 0,
+            "first": 0,
+            "last": 0,
+            "min": 0,
+            "max": 0,
+            "counter_decreases": 0,
+            "delta": 0,
+            "delta_available": true
+          }
+        },
+        "health": {
+          "live": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          },
+          "ready": {
+            "available": 30,
+            "missing": 0,
+            "status_200": 30,
+            "http_errors": 0,
+            "transport_errors": 0,
+            "status_codes": {
+              "200": 30
+            },
+            "error_types": {}
+          }
+        },
+        "errors": {}
+      }
+    ]
+  },
+  "memory_endpoints": {
+    "load": {
+      "count": 361,
+      "available": 361,
+      "missing": 0,
+      "invalid_count": 0,
+      "invalid_samples": [],
+      "available_for_slope": true,
+      "first_seconds": -0.762622,
+      "last_seconds": 3601.66605,
+      "span_seconds": 3602.428672,
+      "max_interval_seconds": 10.029266000000007,
+      "single_observed_pid": true,
+      "first_rss_bytes": 2509516800,
+      "last_rss_bytes": 2538921984,
+      "delta_rss_bytes": 29405184,
+      "min_rss_bytes": 2509516800,
+      "max_rss_bytes": 2538921984,
+      "ols_mib_per_minute": 0.07512739925171924
+    },
+    "last_ten_minutes": {
+      "count": 61,
+      "available": 61,
+      "missing": 0,
+      "invalid_count": 0,
+      "invalid_samples": [],
+      "available_for_slope": true,
+      "first_seconds": 3001.198857,
+      "last_seconds": 3601.66605,
+      "span_seconds": 600.467193,
+      "max_interval_seconds": 10.026307000000088,
+      "single_observed_pid": true,
+      "first_rss_bytes": 2538909696,
+      "last_rss_bytes": 2538921984,
+      "delta_rss_bytes": 12288,
+      "min_rss_bytes": 2538721280,
+      "max_rss_bytes": 2538921984,
+      "ols_mib_per_minute": -0.0029719361261258304
+    },
+    "recovery": {
+      "count": 12,
+      "available": 12,
+      "missing": 0,
+      "invalid_count": 0,
+      "invalid_samples": [],
+      "available_for_slope": true,
+      "first_seconds": 3611.673362,
+      "last_seconds": 3721.813608,
+      "span_seconds": 110.14024599999993,
+      "max_interval_seconds": 10.02025999999978,
+      "single_observed_pid": true,
+      "first_rss_bytes": 2538082304,
+      "last_rss_bytes": 2537922560,
+      "delta_rss_bytes": -159744,
+      "min_rss_bytes": 2537922560,
+      "max_rss_bytes": 2538082304,
+      "ols_mib_per_minute": -0.035114368235124614
+    },
+    "last_twenty_minutes": {
+      "count": 120,
+      "available": 120,
+      "missing": 0,
+      "invalid_count": 0,
+      "invalid_samples": [],
+      "available_for_slope": true,
+      "first_seconds": 2400.899931,
+      "last_seconds": 3591.64552,
+      "span_seconds": 1190.745589,
+      "max_interval_seconds": 10.029266000000007,
+      "single_observed_pid": true,
+      "first_rss_bytes": 2538106880,
+      "last_rss_bytes": 2538827776,
+      "delta_rss_bytes": 720896,
+      "min_rss_bytes": 2538024960,
+      "max_rss_bytes": 2538921984,
+      "ols_mib_per_minute": 0.03486528479986386
+    }
+  },
+  "memory_gate": {
+    "scope": "predeclared engineering memory gate only; not whole-run acceptance or SLA",
+    "window_seconds": [
+      2400,
+      3600
+    ],
+    "slope_limit_mib_per_minute": 0.1,
+    "growth_limit_mib": 2,
+    "coverage_passed": true,
+    "status": "PASSED",
+    "observed": {
+      "count": 120,
+      "available": 120,
+      "missing": 0,
+      "invalid_count": 0,
+      "invalid_samples": [],
+      "available_for_slope": true,
+      "first_seconds": 2400.899931,
+      "last_seconds": 3591.64552,
+      "span_seconds": 1190.745589,
+      "max_interval_seconds": 10.029266000000007,
+      "single_observed_pid": true,
+      "first_rss_bytes": 2538106880,
+      "last_rss_bytes": 2538827776,
+      "delta_rss_bytes": 720896,
+      "min_rss_bytes": 2538024960,
+      "max_rss_bytes": 2538921984,
+      "ols_mib_per_minute": 0.03486528479986386
+    }
+  },
+  "thp_validation": {
+    "all_samples_count": 386,
+    "thp_enabled_counts": {
+      "None": 1,
+      "0": 385
+    },
+    "anon_huge_pages_counts": {
+      "None": 1,
+      "0": 385
+    },
+    "load_samples_count": 361,
+    "load_thp_enabled_counts": {
+      "0": 361
+    },
+    "load_anon_huge_pages_counts": {
+      "0": 361
+    }
+  },
+  "health_by_phase": {
+    "baseline": {
+      "live": {
+        "200": 6
+      },
+      "ready": {
+        "200": 6
+      }
+    },
+    "load": {
+      "live": {
+        "200": 361
+      },
+      "ready": {
+        "200": 361
+      }
+    },
+    "recovery": {
+      "live": {
+        "200": 12
+      },
+      "ready": {
+        "200": 12
+      }
+    },
+    "restart": {
+      "live": {
+        "None": 3
+      },
+      "ready": {
+        "None": 3
+      }
+    },
+    "startup": {
+      "live": {
+        "None": 4
+      },
+      "ready": {
+        "None": 4
+      }
+    }
+  },
+  "fingerprint_groups": 400,
+  "limitations": [
+    "single worker, c4 closed loop, fixed 100 query fixture, no capacity/SLA claim",
+    "sampled memory is not continuous peak or proof of absence of leaks",
+    "native allocator diagnosis is separate and does not attribute all hour growth",
+    "no tracing, gc or trim during HTTP hour; host background load uncontrolled"
+  ],
+  "external_llm_calls": 0
+}
