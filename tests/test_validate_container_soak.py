@@ -45,6 +45,33 @@ def test_main_exit_code_reflects_final_report_status(tmp_path, monkeypatch, stat
     assert main(["--out", str(tmp_path)]) == exit_code
 
 
+@pytest.mark.parametrize("duration", [None, 7200, 14400])
+def test_cli_duration_default_and_long_window_forwarded(tmp_path, monkeypatch, duration):
+    expected = 3600 if duration is None else duration
+
+    async def run(harness):
+        # Construction validates the same duration through bench_concurrent.Config.
+        assert harness.args.duration_seconds == expected
+        command = harness.benchmark_command()
+        assert float(command[command.index("--duration-seconds") + 1]) == expected
+        harness.report["status"] = "COMPLETED"
+
+    monkeypatch.setattr(Harness, "run", run)
+    args = ["--out", str(tmp_path)]
+    if duration is not None:
+        args += ["--duration-seconds", str(duration)]
+    assert main(args) == 0
+
+
+@pytest.mark.parametrize("duration", ["0", "-1", "14400.01", "nan", "inf", "-inf"])
+def test_cli_rejects_invalid_duration_before_docker(tmp_path, monkeypatch, duration):
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: pytest.fail("must not call Docker"))
+    with pytest.raises(SystemExit) as error:
+        main(["--out", str(tmp_path / "new"), f"--duration-seconds={duration}"])
+    assert error.value.code == 2
+    assert not (tmp_path / "new").exists()
+
+
 def launch_child():
     child = subprocess.Popen(
         [sys.executable, "-c", "import os,time; print(os.getpid(),flush=True); time.sleep(30)"],

@@ -14,7 +14,12 @@ from scripts import summarize_soak
 from scripts.summarize_soak import main, summarize
 
 
-def bench(warmup: int = 0, events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def bench(
+    warmup: int = 0,
+    events: list[dict[str, Any]] | None = None,
+    *,
+    duration_seconds: float = 3600,
+) -> dict[str, Any]:
     records = [
         row
         for row in events or []
@@ -24,14 +29,14 @@ def bench(warmup: int = 0, events: list[dict[str, Any]] | None = None) -> dict[s
     start = datetime(2026, 10, 23, tzinfo=UTC)
     return {
         "status": "COMPLETED",
-        "config": {"duration_seconds": 3600, "warmup": warmup},
+        "config": {"duration_seconds": duration_seconds, "warmup": warmup},
         "requested_modes": ["bm25"],
         "runs": [
             {
                 "mode": "mixed",
-                "dispatch_window_seconds": 3600,
+                "dispatch_window_seconds": duration_seconds,
                 "started_at": start.isoformat(),
-                "finished_at": (start + timedelta(seconds=3601)).isoformat(),
+                "finished_at": (start + timedelta(seconds=duration_seconds + 1)).isoformat(),
                 "last_dispatch_seconds": max(
                     (row["dispatched_ms"] / 1000 for row in records), default=0
                 ),
@@ -39,7 +44,7 @@ def bench(warmup: int = 0, events: list[dict[str, Any]] | None = None) -> dict[s
                     "total": len(records),
                     "successes": successes,
                     "failures": len(records) - successes,
-                    "elapsed_seconds": 3601,
+                    "elapsed_seconds": duration_seconds + 1,
                 },
             }
         ],
@@ -125,6 +130,63 @@ def test_dispatch_window_boundary_and_cross_window_completion() -> None:
     assert excluded["status"] == "FAILED"
     assert excluded["phases"]["measured"]["issued"] == 4
     assert excluded["ledger"]["window_unassigned_request_ids"] == ["outside"]
+
+
+@pytest.mark.parametrize("duration", [3600, 7200, 14400])
+def test_long_duration_audit_and_cli_include_last_window(tmp_path, duration):
+    events = [
+        event
+        for window in range(duration // 300)
+        for event in pair(f"window-{window}", (window + 1) * 300000 - 1)
+    ]
+    benchmark = bench(events=events, duration_seconds=duration)
+    report = summarize(benchmark, events, duration_seconds=duration)
+    assert report["status"] == "PASSED"
+    assert len(report["windows"]) == duration // 300
+    assert report["windows"][-1]["end_seconds"] == duration
+    assert report["windows"][-1]["issued"] == 1
+    assert report["phases"]["measured"]["issued"] == duration // 300
+    bench_path, ledger_path, out = (
+        tmp_path / name for name in ("bench.json", "events.jsonl", "out.json")
+    )
+    bench_path.write_text(json.dumps(benchmark), encoding="utf-8")
+    ledger_path.write_text("\n".join(json.dumps(event) for event in events), encoding="utf-8")
+    args = ["--bench", str(bench_path), "--ledger", str(ledger_path), "--out", str(out)]
+    if duration != 3600:
+        args += ["--duration-seconds", str(duration)]
+    assert main(args) == 0
+    actual = json.loads(out.read_text(encoding="utf-8"))
+    assert actual["duration_seconds"] == duration
+    assert actual["windows"] == report["windows"]
+
+
+@pytest.mark.parametrize("duration", [0, -1, 14400.01, float("nan"), float("inf"), -float("inf")])
+def test_invalid_duration_audit_and_cli_are_rejected(tmp_path, duration):
+    with pytest.raises(ValueError, match="duration_seconds must be finite"):
+        summarize(bench(), [], duration_seconds=duration)
+    benchmark, ledger, out = (
+        tmp_path / name for name in ("bench.json", "events.jsonl", "out.json")
+    )
+    benchmark.write_text(json.dumps(bench()), encoding="utf-8")
+    ledger.write_text("", encoding="utf-8")
+    assert (
+        main(
+            [
+                "--bench",
+                str(benchmark),
+                "--ledger",
+                str(ledger),
+                "--out",
+                str(out),
+                f"--duration-seconds={duration}",
+            ]
+        )
+        == 1
+    )
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["status"] == "FAILED"
+    assert report["issues"][0]["kind"] == "analysis_error"
+    assert report["issues"][0]["error"] == "ValueError"
 
 
 def test_all_and_success_percentiles_use_nearest_rank() -> None:

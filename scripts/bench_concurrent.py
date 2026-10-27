@@ -31,6 +31,7 @@ from searchpilot.contracts import SearchResponse
 
 MODES = ("bm25", "vector", "hybrid", "ltr")
 MAX_BODY_BYTES = 2 * 1024 * 1024
+MAX_DURATION_SECONDS = 14_400
 
 
 @dataclass(frozen=True)
@@ -61,9 +62,10 @@ class Config:
         if not 0 <= self.warmup <= 1000 or not 1 <= self.limit <= 100:
             raise ValueError("warmup must be 0..1000 and limit 1..100")
         if self.duration_seconds is not None and (
-            not math.isfinite(self.duration_seconds) or not 0 < self.duration_seconds <= 3600
+            not math.isfinite(self.duration_seconds)
+            or not 0 < self.duration_seconds <= MAX_DURATION_SECONDS
         ):
-            raise ValueError("duration must be finite and in (0, 3600] seconds")
+            raise ValueError(f"duration must be finite and in (0, {MAX_DURATION_SECONDS}] seconds")
 
 
 def read_queries(path: Path) -> tuple[list[str], bytes]:
@@ -411,7 +413,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--duration-seconds",
         type=float,
-        help="mixed-mode dispatch window in (0, 3600] seconds; replaces --requests",
+        help=f"mixed dispatch window in (0, {MAX_DURATION_SECONDS}] seconds; replaces --requests",
     )
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--timeout", type=float, default=10.0)

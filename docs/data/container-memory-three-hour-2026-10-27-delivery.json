@@ -1,0 +1,228 @@
+{
+  "status": "DELIVERED_NEGATIVE_STABILITY_RESULT",
+  "checked_at": "2026-10-27T10:02:31.580276+00:00",
+  "experiment_acceptance": "FAILED",
+  "candidate_promoted": false,
+  "production_malloc_arena_max": 2,
+  "archives": [
+    {
+      "file": "container-memory-stability-2026-10-26-baseline-raw.zip",
+      "sha256": "92c29a54ff633797f29d60bf948645a950ee785f209c86318ef3936a1523a5b2",
+      "bytes": 74937021,
+      "members": 499,
+      "crc_and_every_member_hash_verified": true,
+      "exact_private_value_scan": {
+        "status": "PASSED",
+        "at": "2026-10-27T09:59:23.766278+00:00",
+        "archive_sha256": "92c29a54ff633797f29d60bf948645a950ee785f209c86318ef3936a1523a5b2",
+        "archive_members": 499,
+        "additional_file_sha256": {},
+        "private_files_read_locally": [
+          ".env"
+        ],
+        "credential_values_checked": 1,
+        "known_public_fixture_values_excluded": 0,
+        "matched_file_names": [],
+        "credential_values_printed_or_saved": false
+      },
+      "scan_record_sha256": "927866cbaf81fc7cea9c38baaae93dc1a9fffae0e66d1ecc10c50d8b24622acf"
+    },
+    {
+      "file": "container-memory-arena-count-2026-10-26-raw.zip",
+      "sha256": "c3c2b3b54bccd9fbf2dbf482f4edc56f9ac0e74d21637db6cdf572a30ec1f89b",
+      "bytes": 12616927,
+      "members": 279,
+      "crc_and_every_member_hash_verified": true,
+      "exact_private_value_scan": {
+        "status": "PASSED",
+        "at": "2026-10-27T09:59:22.273201+00:00",
+        "archive_sha256": "c3c2b3b54bccd9fbf2dbf482f4edc56f9ac0e74d21637db6cdf572a30ec1f89b",
+        "archive_members": 279,
+        "additional_file_sha256": {},
+        "private_files_read_locally": [
+          ".env"
+        ],
+        "credential_values_checked": 1,
+        "known_public_fixture_values_excluded": 0,
+        "matched_file_names": [],
+        "credential_values_printed_or_saved": false
+      },
+      "scan_record_sha256": "60cc034b4e0855d5d8bfd43fdbef0ac2ac7ee0138b740f9a27b55550ef8cc593"
+    },
+    {
+      "file": "container-memory-arena1-interrupted-2026-10-27-raw.zip",
+      "sha256": "fb3041929203a437e0bba64c11470fb4c1e0314391135e9c115b7fc8203097f4",
+      "bytes": 22262966,
+      "members": 94,
+      "crc_and_every_member_hash_verified": true,
+      "exact_private_value_scan": {
+        "status": "PASSED",
+        "at": "2026-10-27T09:59:22.499810+00:00",
+        "archive_sha256": "fb3041929203a437e0bba64c11470fb4c1e0314391135e9c115b7fc8203097f4",
+        "archive_members": 94,
+        "additional_file_sha256": {},
+        "private_files_read_locally": [
+          ".env"
+        ],
+        "credential_values_checked": 1,
+        "known_public_fixture_values_excluded": 0,
+        "matched_file_names": [],
+        "credential_values_printed_or_saved": false
+      },
+      "scan_record_sha256": "579d524bf1c90df02808bcc24a0c0c0205e1de9e3642425947bf82a496e20cb4"
+    },
+    {
+      "file": "container-memory-three-hour-2026-10-27-raw.zip",
+      "sha256": "bb5e7f616b79a6b5cf9d8d70ca029ed3eb55bc6843a5d9b60988754d95314c7e",
+      "bytes": 59608643,
+      "members": 178,
+      "crc_and_every_member_hash_verified": true,
+      "exact_private_value_scan": {
+        "status": "PASSED",
+        "at": "2026-10-27T09:59:23.355046+00:00",
+        "archive_sha256": "bb5e7f616b79a6b5cf9d8d70ca029ed3eb55bc6843a5d9b60988754d95314c7e",
+        "archive_members": 178,
+        "additional_file_sha256": {},
+        "private_files_read_locally": [
+          ".env"
+        ],
+        "credential_values_checked": 1,
+        "known_public_fixture_values_excluded": 0,
+        "matched_file_names": [],
+        "credential_values_printed_or_saved": false
+      },
+      "scan_record_sha256": "be33d26cd36455846265c9d0c1fbf15a8139ffc7fe1d4917449449b727bb7db8"
+    }
+  ],
+  "local_checks": {
+    "pytest_passed": 887,
+    "subtests_passed": 68,
+    "skipped": 3,
+    "integration_deselected": 14,
+    "pytest_log_sha256": "f579385bf2a2efd1770b2c45d25ec4bb977de7bffd496e402ca65f482158a4dd",
+    "ruff": "PASSED",
+    "format": "PASSED",
+    "mypy": "PASSED: 77 source files"
+  },
+  "cleanup": {
+    "status": "COMPLETED",
+    "project": "sp-agent-memory-20261027",
+    "operations": [
+      {
+        "stop": "f7123c5e18e93468525f065151f9f71307ef043bcc5525d0da98e6c72b22461a"
+      },
+      {
+        "stop": "9871169455a11600366d7dd740be1d6176256300f18e0f7eedfe44890649344e"
+      },
+      {
+        "remove_container": "f7123c5e18e93468525f065151f9f71307ef043bcc5525d0da98e6c72b22461a"
+      },
+      {
+        "remove_container": "9871169455a11600366d7dd740be1d6176256300f18e0f7eedfe44890649344e"
+      },
+      {
+        "remove_volume": "sp-agent-memory-20261027_pgdata"
+      },
+      {
+        "remove_network": "7b316472f342de8e42495e30ede9c96e56b40675e3ba9c4c54599561b8700a36"
+      }
+    ],
+    "original_searchpilot_pgdata_preserved": true,
+    "other_resources_preserved": true,
+    "full_cleanup_record_sha256": "c5c469deeb8a46d07481665e833d3b9fa3b9885f45d37080c2fdb515ce63c1c6",
+    "older_interrupted_run_resources": "retained; excluded from this cleanup"
+  },
+  "figure": {
+    "sha256": "6957989703b07d98a3a8e4b98e9614a1077535bb903c7dfee93c501c0397943e",
+    "manifest": {
+      "status": "COMPLETED",
+      "created_at": "2026-10-27T09:51:28.760517+00:00",
+      "inputs": {
+        "bench": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27\\final-three-hour\\soak.json",
+          "sha256": "4cff73f64a9b9db404f6df64437b76febb379c5ff7ce0e3a48352ab38aa33b23",
+          "bytes": 101136768
+        },
+        "harness": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27\\final-three-hour\\summary.json",
+          "sha256": "0b600cf200a2a21570315c4613831419c5d3f5e9af5246dddfef854fa7bbd785",
+          "bytes": 1063796
+        },
+        "launcher": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27\\launcher.json",
+          "sha256": "94a8c8b3697e598494a925a4e3a2a8e7f389d0652e6d65c1ebad354e7ff4ae80",
+          "bytes": 3042
+        },
+        "samples": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27\\final-three-hour\\samples.jsonl",
+          "sha256": "431cbeaf159f8795f98b039f86c1112ee4ef5bd4a57cedd79ee169909e8949f3",
+          "bytes": 7372324
+        },
+        "background": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27\\final-three-hour\\background.jsonl",
+          "sha256": "1682ae8ec30c16eadaf61ac823b3f90d08db22b28664758742986742653b580c",
+          "bytes": 2177619
+        },
+        "audit": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27-review\\resources-after-run.json",
+          "sha256": "c2d63358d569dccad93a3f65242a71d8a40ceae10e42a654940312f6064fe00f",
+          "bytes": 224362
+        },
+        "script": {
+          "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27-review\\render_three_hour.py",
+          "sha256": "8473d6cfbbeaf2ae1c28b5043ff5ff33d6754df38de57d902c593ebfacd89686",
+          "bytes": 17016
+        }
+      },
+      "scope": "descriptive_plot_only; independent audit JSON decides thresholds",
+      "zero_leaks_proved": false,
+      "matplotlib_version": "3.11.2",
+      "actual_benchmark_started_at": "2026-10-27T06:38:22.313211+00:00",
+      "reference_sample": {
+        "seconds": 2.590877056121826,
+        "phase": "load",
+        "identity": [
+          1,
+          339452
+        ],
+        "values": {
+          "rss": 2498.01171875,
+          "anonymous": 2225.4140625
+        },
+        "client_identity": 2952,
+        "client_rss": 54.53515625
+      },
+      "phase_counts": {
+        "startup": 5,
+        "baseline": 6,
+        "load": 1080,
+        "recovery": 60,
+        "restart": 4
+      },
+      "full_sample_interval_seconds": [
+        -107.51738905906677,
+        11441.201595067978
+      ],
+      "full_collection_interval_seconds": [
+        -111.23163986206055,
+        11454.2129509449
+      ],
+      "stable_detail_window_seconds": [
+        3600,
+        10800
+      ],
+      "missing_values_are_gaps": true,
+      "maximum_connected_gap_seconds": 15,
+      "process_identity_changes_break_lines": true,
+      "memory_scopes_added": false,
+      "clock": "sample/background row at minus actual benchmark started_at; non-atomic",
+      "output": {
+        "path": "E:\\searchPilot\\artifacts\\agent-memory-2026-10-27-review\\three-hour-memory-release.png",
+        "sha256": "6957989703b07d98a3a8e4b98e9614a1077535bb903c7dfee93c501c0397943e",
+        "bytes": 356211
+      }
+    }
+  },
+  "publication_scope": "CI validates code; it cannot change the failed memory acceptance",
+  "external_llm_calls_in_memory_experiment": 0
+}

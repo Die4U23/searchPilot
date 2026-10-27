@@ -23,7 +23,7 @@ from pathlib import Path
 import httpx
 import psycopg
 import pyarrow.parquet as pq
-from scripts.bench_concurrent import MODES, Config, read_queries
+from scripts.bench_concurrent import MAX_DURATION_SECONDS, MODES, Config, read_queries
 from scripts.soak_memory import sample_windows_process
 
 from searchpilot.recommend.history import load_user_history
@@ -737,7 +737,12 @@ def main(argv=None):
     parser.add_argument("--image", default="searchpilot-validation:2026-10-23-memory")
     parser.add_argument("--api-port", type=int, default=18082)
     parser.add_argument("--db-port", type=int, default=15433)
-    parser.add_argument("--duration-seconds", type=float, default=3600)
+    parser.add_argument(
+        "--duration-seconds",
+        type=float,
+        default=3600,
+        help=f"dispatch window in (0, {MAX_DURATION_SECONDS}] seconds; default: 3600",
+    )
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--queries", type=Path, default=ROOT / "data/queries/queries.csv")
     parser.add_argument("--baseline-seconds", type=float, default=60)
@@ -746,7 +751,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if (
         not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", args.project)
-        or not 0 < args.duration_seconds <= 3600
+        or not math.isfinite(args.duration_seconds)
+        or not 0 < args.duration_seconds <= MAX_DURATION_SECONDS
         or not 1 <= args.concurrency <= 256
         or any(
             not math.isfinite(v) or v < 0 for v in (args.baseline_seconds, args.recovery_seconds)
