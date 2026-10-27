@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from scripts.bench_concurrent import MODES, latency_summary, read_queries
+from scripts.bench_concurrent import MAX_DURATION_SECONDS, MODES, latency_summary, read_queries
 
 
 def _number(value: Any) -> bool:
@@ -456,8 +456,8 @@ def summarize(
     min_repeats: int = 1,
 ) -> dict[str, Any]:
     """Reconstruct unique issued IDs; duplicates are ambiguous, never silently deduplicated."""
-    if not _number(duration_seconds) or not 0 < duration_seconds <= 3600:
-        raise ValueError("duration_seconds must be finite and in (0, 3600]")
+    if not _number(duration_seconds) or not 0 < duration_seconds <= MAX_DURATION_SECONDS:
+        raise ValueError(f"duration_seconds must be finite and in (0, {MAX_DURATION_SECONDS}]")
     if not _number(window_seconds) or window_seconds <= 0:
         raise ValueError("window_seconds must be finite and positive")
     if type(min_repeats) is not int or min_repeats < 1:
@@ -817,7 +817,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--queries", type=Path)
     parser.add_argument("--min-repeats", type=int, default=1)
     parser.add_argument("--out", required=True, type=Path)
-    parser.add_argument("--duration-seconds", type=float, default=3600)
+    parser.add_argument(
+        "--duration-seconds",
+        type=float,
+        default=3600,
+        help=f"expected dispatch window in (0, {MAX_DURATION_SECONDS}] seconds; default: 3600",
+    )
     parser.add_argument("--window-seconds", type=float, default=300)
     args = parser.parse_args(argv)
     inputs = [

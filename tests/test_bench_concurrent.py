@@ -256,7 +256,7 @@ async def test_connection_closed_before_headers_is_counted() -> None:
         {"base_url": "https://user:secret@example.test"},
         {"duration_seconds": 0},
         {"duration_seconds": -1},
-        {"duration_seconds": 3601},
+        {"duration_seconds": 14400.01},
         {"duration_seconds": float("inf")},
         {"duration_seconds": float("nan")},
     ],
@@ -264,6 +264,44 @@ async def test_connection_closed_before_headers_is_counted() -> None:
 def test_invalid_limits_rejected(kwargs: dict[str, Any]) -> None:
     with pytest.raises(ValueError):
         Config(**{"base_url": "http://127.0.0.1:8000", **kwargs})
+
+
+@pytest.mark.parametrize("duration", [3600, 7200, 14400])
+def test_long_duration_config_and_cli_agree(tmp_path, monkeypatch, duration):
+    assert Config("http://127.0.0.1:8000", duration_seconds=duration).duration_seconds == duration
+    queries, out = cli_paths(tmp_path)
+    monkeypatch.setattr(bench_concurrent, "code_metadata", lambda root: {})
+    received = []
+
+    async def capture(config, modes, queries, **kwargs):
+        received.append(config.duration_seconds)
+        return {"summary": {"failures": 0}, "warmup": []}
+
+    monkeypatch.setattr(bench_concurrent, "run_mixed_duration", capture)
+    assert (
+        bench_concurrent.main(
+            ["--queries", str(queries), "--out", str(out), "--duration-seconds", str(duration)]
+        )
+        == 0
+    )
+    assert received == [duration]
+    assert json.loads(out.read_text())["config"]["duration_seconds"] == duration
+
+
+@pytest.mark.parametrize("duration", ["0", "-1", "14400.01", "nan", "inf", "-inf"])
+def test_cli_rejects_invalid_duration_before_output(tmp_path, monkeypatch, duration):
+    queries, out = cli_paths(tmp_path)
+
+    async def unexpected(*args, **kwargs):
+        pytest.fail("invalid duration must not start requests")
+
+    monkeypatch.setattr(bench_concurrent, "run_mixed_duration", unexpected)
+    with pytest.raises(SystemExit) as error:
+        bench_concurrent.main(
+            ["--queries", str(queries), "--out", str(out), f"--duration-seconds={duration}"]
+        )
+    assert error.value.code == 2
+    assert not out.exists()
 
 
 def test_percentile_nearest_rank_and_empty() -> None:
