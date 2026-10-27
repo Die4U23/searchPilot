@@ -1,0 +1,63 @@
+{
+  "checked_at": "2026-10-27T06:33:43.545430+00:00",
+  "scope": "Finite Agent implementation and synthetic evidence",
+  "rounds": {
+    "initial": {
+      "requests": 41,
+      "known_usage_requests": 41,
+      "total_tokens": 42977,
+      "original_structured_pass": 0,
+      "completed": 1,
+      "tasks": 8
+    },
+    "protocol_repair": {
+      "requests": 34,
+      "known_usage_requests": 34,
+      "total_tokens": 37097,
+      "original_structured_pass": 8,
+      "completed": 8,
+      "tasks": 8
+    },
+    "final_runtime_original_score": {
+      "requests": 36,
+      "known_usage_requests": 36,
+      "total_tokens": 39424,
+      "original_structured_pass": 6,
+      "completed": 8,
+      "tasks": 8
+    }
+  },
+  "retrospective_final_score": {
+    "passed": 8,
+    "tasks": 8,
+    "new_calls": 0,
+    "pre_registered": false
+  },
+  "api": {
+    "accepted": true,
+    "requests": 4,
+    "tokens": 4914,
+    "scope": "real provider via ASGI /agent/analyze with local application registry; no TCP server"
+  },
+  "diagnostic_requests": 1,
+  "all_external_requests": 120,
+  "all_known_tokens": 129842,
+  "free_text_semantics": "UNSCORED",
+  "memory_stability": "PENDING_SEPARATE_VALIDATION",
+  "container_api": {
+    "accepted": true,
+    "requests": 4,
+    "tokens": 4857,
+    "scope": "real TCP HTTP endpoint in isolated Agent-only container; no full-search readiness claim",
+    "image": "sha256:b8c42b9b10d167dbd4fc9cd5fa4cbbfd6cae4e40102ee4343347978b27903b08"
+  },
+  "supersedes_summary_sha256": "99d0095d8ad1c22f87b41232bdaf064513e2bd901f06c024b133d7d9f8a2ab35",
+  "local_checks": {
+    "pytest": "PASSED, 3 skips; integration excluded",
+    "ruff": "PASSED",
+    "format": "PASSED",
+    "mypy": "PASSED: 77 source files",
+    "scope": "working tree also contains separate uncommitted memory-validation tests",
+    "pytest_log_sha256": "c25d2b1e1f8229a72400406168c4f801a11914269364a823ccbe5a6a118c2d60"
+  }
+}
