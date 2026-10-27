@@ -208,3 +208,9 @@ class AgentAnalyzeResponse(_Response):
     answer: str
     citations: list[str]
     tool_trace: list[dict[str, Any]]
+    mode: str = "deterministic"
+    status: str = "completed"
+    stop_reason: str = "final"
+    steps: list[dict[str, Any]] = Field(default_factory=list)
+    plan: list[str] = Field(default_factory=list)
+    usage: dict[str, Any] = Field(default_factory=dict)

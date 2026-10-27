@@ -10,6 +10,7 @@ from typing import Any
 
 from fastapi import Depends, FastAPI
 
+from searchpilot.agent.runtime import AgentModel
 from searchpilot.api.app import install_api
 from searchpilot.api.auth import require_caller
 from searchpilot.config import Settings, get_settings
@@ -34,6 +35,7 @@ def create_app(
     probes: Sequence[ReadinessProbe] = (),
     ctr: object | None = None,
     experiments: object | None = None,
+    agent_model: AgentModel | None = None,
 ) -> FastAPI:
     """构造应用；依赖放在 app.state，路由通过 Depends 读取。None 表示该能力未就绪（503）。"""
     closers: list[Callable[[], object]] = []
@@ -61,6 +63,8 @@ def create_app(
     app.state.probes = tuple(probes)
     app.state.ctr = ctr
     app.state.experiments = experiments
+    app.state.agent_model = agent_model
+    app.state.agent_active_runs = 0
     app.state.closers = closers
     install_api(app)
     return app

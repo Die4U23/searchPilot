@@ -16,7 +16,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 # 向量额外依赖含 torch。先装 CPU 轮子，避免 .[vector] 拉到 CUDA 包。
 RUN pip install --index-url https://download.pytorch.org/whl/cpu torch \
-    && pip install ".[vector]"
+    && pip install ".[vector,agent]"
 
 # 非 root 运行；data/ 与 artifacts/ 由 compose 挂载进来。
 # 句向量模型在构建时下载到 searchpilot 家目录，运行时不再访问网络。

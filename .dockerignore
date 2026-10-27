@@ -5,6 +5,7 @@
 .mypy_cache
 .tmp
 .env
+.env.*
 data/raw
 data/processed
 artifacts
