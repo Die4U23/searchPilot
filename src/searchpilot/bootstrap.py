@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import sys
 from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
@@ -11,6 +12,7 @@ from typing import Any
 from fastapi import Depends, FastAPI
 
 from searchpilot.agent.runtime import AgentModel
+from searchpilot.allocator import ResidencyReclaimer
 from searchpilot.api.app import install_api
 from searchpilot.api.auth import require_caller
 from searchpilot.config import Settings, get_settings
@@ -41,13 +43,35 @@ def create_app(
     closers: list[Callable[[], object]] = []
 
     @asynccontextmanager
-    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        yield
-        for close in closers:
+    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+        policy: ResidencyReclaimer | None = None
+        try:
+            interval = application.state.settings.allocator_trim_interval_seconds
+            if interval > 0:
+                policy = ResidencyReclaimer(interval_seconds=interval, enabled=True)
+                if policy.start() is not True:
+                    raise RuntimeError("Allocator reclaimer did not start")
+                logger.info("allocator_reclaimer_started", extra={"policy": policy.status()})
+            yield
+        finally:
+            preserve_failure = sys.exc_info()[0] is not None
             try:
-                close()
-            except Exception:
-                logger.warning("shutdown hook failed", exc_info=True)
+                if policy is not None:
+                    try:
+                        status = policy.close(timeout_seconds=5.0)
+                        logger.info("allocator_reclaimer_stopped", extra={"policy": status})
+                        if status["alive"] or not status["closed"] or status["errors"]:
+                            raise RuntimeError("Allocator reclaimer did not shut down cleanly")
+                    except BaseException:
+                        if not preserve_failure:
+                            raise
+                        logger.warning("allocator reclaimer shutdown failed", exc_info=True)
+            finally:
+                for close in closers:
+                    try:
+                        close()
+                    except Exception:
+                        logger.warning("shutdown hook failed", exc_info=True)
 
     app = FastAPI(
         title="SearchPilot",
