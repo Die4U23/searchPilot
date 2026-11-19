@@ -6,7 +6,7 @@ import pytest
 from rank_bm25 import BM25Okapi
 
 from searchpilot.ports import Document
-from searchpilot.search.bm25 import BM25Scorer, lucene_idf, okapi_raw_idf
+from searchpilot.search.bm25 import BM25Scorer, IdfVariant, lucene_idf, okapi_raw_idf
 from searchpilot.search.inverted_index import SINGLE_TEXT_FIELDS, InvertedIndex
 from searchpilot.search.normalize import analyze, document_text
 
@@ -369,3 +369,21 @@ def test_repeated_query_terms_count_twice() -> None:
     once = scorer.score(["boston"], 2)
     twice = scorer.score(["boston", "boston"], 2)
     assert twice == pytest.approx(2 * once)
+
+
+@pytest.mark.parametrize("variant", ["lucene", "okapi"])
+def test_rank_scores_preserves_unfiltered_exact_scores(variant: IdfVariant) -> None:
+    index = InvertedIndex.from_tokenized(
+        ["C", "A", "B", "D"],
+        {
+            "title": [["x", "y"], ["x", "y"], ["x"], []],
+            "abstract": [["y", "z"], ["y", "z"], ["x", "y"], ["w"]],
+        },
+    )
+    scorer = BM25Scorer(index, idf_variant=variant, field_weights={"title": 1.4, "abstract": -0.7})
+    terms = ["y", "missing", "x", "z", "y"]
+    scores = scorer.score_all(terms)
+    ranked = scorer.rank_scores(scores, 1, doc_filter=lambda doc: doc != 2)
+    assert ranked == [(1, scorer.score(terms, 1))]
+    for doc in range(index.doc_count):
+        assert scores.get(doc, 0.0).hex() == scorer.score(terms, doc).hex()

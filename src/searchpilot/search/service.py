@@ -219,7 +219,7 @@ class BM25SearchService:
             return SearchResult(
                 normalized_query=normalized, hits=(), model_version=self._model_version, mode="bm25"
             )
-        doc_filter = self._build_doc_filter(filters)
+        doc_filter = self._build_doc_filter(self._category(filters))
         ranked = self._scorer.search(terms, limit, doc_filter=doc_filter)
         hits = tuple(
             SearchHit(item_id=self._index.item_ids[doc_idx], score=score, rank=rank, channel="bm25")
@@ -261,15 +261,14 @@ class BM25SearchService:
         assert self._vectors is not None and self._encode_query is not None
         depth = max(limit, FUSION_DEPTH)
         terms = self._analyzer(query)
-        doc_filter = self._build_doc_filter(filters)
+        category = self._category(filters)
+        doc_filter = self._build_doc_filter(category)
         if terms:
             bm25_ranked = self._scorer.search(terms, depth, doc_filter=doc_filter)
             bm25_ids = [self._index.item_ids[doc_idx] for doc_idx, _score in bm25_ranked]
         else:
             bm25_ids = []
-        vector_ranked = self._vectors.search(
-            self._encode_query(query), depth, category=self._category(filters)
-        )
+        vector_ranked = self._vectors.search(self._encode_query(query), depth, category=category)
         vector_ids = [item_id for item_id, _score in vector_ranked]
         fused = reciprocal_rank_fusion([bm25_ids, vector_ids], k=DEFAULT_RRF_K)[:limit]
         hits = tuple(
@@ -299,16 +298,16 @@ class BM25SearchService:
         if not self.vector_ready:
             raise SearchNotReadyError("vector index is not loaded")
         assert self._vectors is not None and self._encode_query is not None
+        assert self._vector_pos is not None
         terms = self._analyzer(query)
-        doc_filter = self._build_doc_filter(filters)
         category = self._category(filters)
-        if terms:
-            ranked = self._scorer.search(terms, RETRIEVAL_DEPTH, doc_filter=doc_filter)
-            bm25_ranked = [(self._index.item_ids[doc_idx], score) for doc_idx, score in ranked]
-        else:
-            bm25_ranked = []
+        doc_filter = self._build_doc_filter(category)
         encoded = self._encode_query(query)
         vector_ranked = self._vectors.search(encoded, RETRIEVAL_DEPTH, category=category)
+        # 类别只限制召回名次；训练时 extra_ids 中的跨类别文档仍需要原始分数。
+        lexical_scores = self._scorer.score_all(terms) if terms else {}
+        ranked = self._scorer.rank_scores(lexical_scores, RETRIEVAL_DEPTH, doc_filter=doc_filter)
+        bm25_ranked = [(self._index.item_ids[doc_idx], score) for doc_idx, score in ranked]
         fused = reciprocal_rank_fusion(
             [
                 [item_id for item_id, _score in bm25_ranked],
@@ -323,19 +322,19 @@ class BM25SearchService:
         vector_rank = {
             item_id: rank for rank, (item_id, _score) in enumerate(vector_ranked, start=1)
         }
-        query_vec = l2_normalize_vector(np.asarray(encoded, dtype=np.float32))
-        seen: set[str] = set()
-        focus: list[str] = []
-        for item_id in (*candidates, *extra_ids):
-            if item_id in seen:
-                continue
-            seen.add(item_id)
-            focus.append(item_id)
-        for item_id in focus:
+        query_vec = l2_normalize_vector(encoded)
+        has_query_vector = float(np.linalg.norm(query_vec)) != 0.0
+        for item_id in dict.fromkeys((*candidates, *extra_ids)):
             if item_id not in bm25_score:
-                bm25_score[item_id] = self._bm25_score(terms, item_id)
+                pos = self._item_pos.get(item_id)
+                bm25_score[item_id] = lexical_scores.get(pos, 0.0) if pos is not None else 0.0
             if item_id not in vector_score:
-                vector_score[item_id] = self._vector_cosine(query_vec, item_id)
+                row = self._vector_pos.get(item_id)
+                vector_score[item_id] = (
+                    float(self._vectors.matrix[row] @ query_vec)
+                    if has_query_vector and row is not None
+                    else 0.0
+                )
         top_categories = [
             self._categories[item_id]
             for item_id, _score in bm25_ranked[:CATEGORY_MODE_K]
@@ -382,29 +381,7 @@ class BM25SearchService:
             normalized_query=normalized, hits=hits, model_version=version, mode="ltr"
         )
 
-    def _bm25_score(self, terms: Sequence[str], item_id: str) -> float:
-        if not terms:
-            return 0.0
-        pos = self._item_pos.get(item_id)
-        if pos is None:
-            return 0.0
-        return float(self._scorer.score(terms, pos))
-
-    def _vector_cosine(self, query_vec: np.ndarray, item_id: str) -> float:
-        if self._vectors is None or self._vector_pos is None:
-            return 0.0
-        row = self._vector_pos.get(item_id)
-        if row is None or float(np.linalg.norm(query_vec)) == 0.0:
-            return 0.0
-        return float(self._vectors.matrix[row] @ query_vec)
-
-    def _build_doc_filter(self, filters: Mapping[str, str] | None) -> DocFilter | None:
-        if not filters:
-            return None
-        unknown = set(filters) - SUPPORTED_FILTER_KEYS
-        if unknown:
-            raise ValueError(f"unsupported filter keys: {sorted(unknown)}")
-        category = filters.get("category")
+    def _build_doc_filter(self, category: str | None) -> DocFilter | None:
         if category is None:
             return None
         categories = self._index.categories

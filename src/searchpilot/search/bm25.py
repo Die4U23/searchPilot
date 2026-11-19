@@ -183,9 +183,15 @@ class BM25Scorer:
         """
         if limit <= 0:
             return []
-        scores = self.score_all(query_terms, doc_filter=doc_filter)
-        if not scores:
-            return []
+        return self.rank_scores(self.score_all(query_terms), limit, doc_filter=doc_filter)
+
+    def rank_scores(
+        self, scores: Mapping[int, float], limit: int, *, doc_filter: DocFilter | None = None
+    ) -> list[tuple[int, float]]:
+        """从已有分数中取过滤后的 top-k，保留原始分数供 LTR 特征复用。"""
         item_ids = self.index.item_ids
-        top = heapq.nsmallest(limit, scores.items(), key=lambda kv: (-kv[1], item_ids[kv[0]]))
-        return [(doc_idx, score) for doc_idx, score in top]
+        items = scores.items()
+        eligible = (
+            items if doc_filter is None else (entry for entry in items if doc_filter(entry[0]))
+        )
+        return heapq.nsmallest(limit, eligible, key=lambda kv: (-kv[1], item_ids[kv[0]]))
