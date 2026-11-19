@@ -70,12 +70,10 @@ def build_recommend_service(data_dir: Path) -> RecommendPort:
             f"missing required Parquet under {version_dir}: {', '.join(missing)}"
         )
 
-    impressions = pd.read_parquet(impressions_path)
-    histories = load_user_history(history_path)
-
     popular = PopularModel()
-    popular.fit(impressions)
+    popular.fit(pd.read_parquet(impressions_path, columns=["split", "clicked", "item_id"]))
 
+    histories = load_user_history(history_path)
     itemcf = ItemCFModel()
     itemcf.fit(histories)
 
