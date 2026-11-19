@@ -324,6 +324,48 @@ def test_ltr_category_filter_and_limit_and_empty_query() -> None:
     assert empty.normalized_query == ""
 
 
+@pytest.mark.parametrize(
+    ("category", "bm25_rank", "vector_rank"),
+    [(None, {"BOTH": 1}, {"BM25": 1}), ("NeWs", {}, {"VEC": 1})],
+)
+def test_prepare_ltr_keeps_off_list_scores_without_rescoring(
+    monkeypatch: pytest.MonkeyPatch,
+    category: str | None,
+    bm25_rank: dict[str, int],
+    vector_rank: dict[str, int],
+) -> None:
+    monkeypatch.setattr("searchpilot.search.service.RETRIEVAL_DEPTH", 1)
+    vectors = _vector_index()
+    service = InMemorySearchService(DOCS)
+    service.attach_vector_index(vectors, lambda _: np.array([0.0, 1.0], dtype=np.float32))
+    query = "alpha alpha sports"
+    terms = service.analyze(query)
+    expected = {doc.item_id: service.scorer.score(terms, pos) for pos, doc in enumerate(DOCS)}
+    expected["MISSING"] = 0.0
+    monkeypatch.setattr(service.scorer, "score", lambda *_: pytest.fail("scored a document twice"))
+
+    filters = {"category": category} if category is not None else None
+    prep = service.prepare_ltr(query, [*expected, "OTHER"], filters=filters)
+
+    assert prep.signals.bm25_score == expected
+    assert prep.signals.bm25_rank == bm25_rank
+    assert prep.signals.vector_rank == vector_rank
+    assert set(prep.candidates) == bm25_rank.keys() | vector_rank.keys()
+    assert prep.signals.vector_score == {
+        **{item_id: float(vectors.matrix[i, 1]) for i, item_id in enumerate(vectors.item_ids)},
+        "MISSING": 0.0,
+    }
+
+
+def test_prepare_ltr_zero_query_vector_keeps_lexical_candidates() -> None:
+    service = InMemorySearchService(DOCS)
+    service.attach_vector_index(_vector_index(), lambda _: np.zeros(2, dtype=np.float32))
+    prep = service.prepare_ltr("alpha", ["MISSING"])
+    assert prep.signals.vector_rank == {}
+    assert prep.candidates == tuple(prep.signals.bm25_rank)
+    assert prep.signals.vector_score == dict.fromkeys((*prep.candidates, "MISSING"), 0.0)
+
+
 def test_ltr_ready_flags_and_missing_artifact_raises() -> None:
     bare = InMemorySearchService(DOCS)
     assert bare.vector_ready is False

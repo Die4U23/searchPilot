@@ -5,11 +5,13 @@ import json
 import threading
 import time
 from dataclasses import replace
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 import searchpilot.agent.runtime as runtime
+from searchpilot.agent.errors import DecisionError
 from searchpilot.agent.runtime import REFUSAL, AgentLimits, run_agent
 from searchpilot.experiments.store import ExperimentRecord, InMemoryExperimentStore, MetricPoint
 
@@ -142,10 +144,11 @@ async def test_invalid_action_corrected_without_executing_it(bad_action: Any) ->
     assert result["tool_trace"][0]["tool"] == "list_experiments"
 
 
-async def test_store_error_is_sanitized_and_recoverable() -> None:
+@pytest.mark.parametrize("store_error", [RuntimeError, TimeoutError])
+async def test_store_error_is_sanitized_and_recoverable(store_error: type[Exception]) -> None:
     class BrokenStore(InMemoryExperimentStore):
         def get(self, experiment_id: str) -> ExperimentRecord | None:
-            raise RuntimeError("secret_api_key_and_database_password")
+            raise store_error("secret_api_key_and_database_password")
 
     model = ScriptedModel(
         tool("get_experiment_config", experiment_id="actual-only"),
@@ -483,6 +486,166 @@ async def test_model_timeout_cancels_decision_and_returns_promptly() -> None:
     assert time.monotonic() - started < 0.5
     assert result["status"] == "timed_out"
     assert result["stop_reason"] == "total_timeout"
+
+
+@pytest.mark.parametrize("expiry_point", ["snapshot", "scheduled_decision"])
+async def test_expired_total_budget_does_not_dispatch_model(
+    monkeypatch: pytest.MonkeyPatch, expiry_point: str
+) -> None:
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: clock.now))
+    model = ScriptedModel(tool("list_experiments"))
+    if expiry_point == "snapshot":
+
+        def expired_snapshot(value: Any) -> str:
+            snapshot = json.dumps(value)
+            clock.now = 1.0
+            return snapshot
+
+        monkeypatch.setattr(
+            runtime, "json", SimpleNamespace(dumps=expired_snapshot, loads=json.loads)
+        )
+    else:
+        # The task can remain queued while the event loop is busy elsewhere.
+        asyncio.get_running_loop().call_soon(setattr, clock, "now", 1.0)
+    result = await run(model, total_timeout_seconds=1)
+    assert result["status"] == "timed_out"
+    assert result["stop_reason"] == "total_timeout"
+    assert result["steps"][0]["error"] == "model_timeout"
+    assert model.messages == []
+    assert result["tool_trace"] == []
+
+
+@pytest.mark.parametrize(
+    "delivery_time,status,reason,step_error",
+    [
+        (0.5, "failed", "invalid_response", "invalid_response"),
+        (1, "timed_out", "total_timeout", "model_timeout"),
+    ],
+)
+async def test_model_failure_is_classified_at_delivery(
+    monkeypatch: pytest.MonkeyPatch, delivery_time: float, status: str, reason: str, step_error: str
+) -> None:
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: clock.now))
+
+    class FailingModel:
+        async def decide(self, messages: Any) -> dict[str, Any]:
+            asyncio.get_running_loop().call_soon(setattr, clock, "now", delivery_time)
+            raise DecisionError("invalid_response")
+
+    result = await run(FailingModel(), total_timeout_seconds=1)
+    assert (result["status"], result["stop_reason"]) == (status, reason)
+    assert result["steps"][0]["error"] == step_error
+    assert result["tool_trace"] == []
+
+
+async def test_expired_total_budget_does_not_acquire_tool_worker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: clock.now))
+    action = tool("list_experiments")
+
+    def expire_after_action(value: Any, **kwargs: Any) -> str:
+        encoded = json.dumps(value, **kwargs)
+        if value is action:
+            clock.now = 1.0
+        return encoded
+
+    class UnavailableWorkers:
+        def acquire(self, *, blocking: bool) -> bool:
+            pytest.fail("an expired run must not acquire a tool worker")
+
+    monkeypatch.setattr(
+        runtime, "json", SimpleNamespace(dumps=expire_after_action, loads=json.loads)
+    )
+    monkeypatch.setattr(runtime, "_WORKERS", UnavailableWorkers())
+    model = ScriptedModel(action, final())
+    result = await run(model, total_timeout_seconds=1)
+    assert result["status"] == "timed_out"
+    assert result["stop_reason"] == "total_timeout"
+    assert result["tool_trace"][0]["ok"] is False
+    assert result["tool_trace"][0]["recoverable"] is False
+    assert len(model.messages) == 1
+
+
+@pytest.mark.parametrize(
+    "total_timeout,tool_timeout,reason",
+    [(1.0, 0.5, "tool_timeout"), (0.5, 1.0, "total_timeout")],
+)
+@pytest.mark.parametrize("expiry_point", ["before_read", "during_read"])
+async def test_tool_deadline_covers_startup_and_delivery(
+    monkeypatch: pytest.MonkeyPatch,
+    total_timeout: float,
+    tool_timeout: float,
+    reason: str,
+    expiry_point: str,
+) -> None:
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: clock.now))
+    capacity = threading.BoundedSemaphore(1)
+    monkeypatch.setattr(runtime, "_WORKERS", capacity)
+    calls: list[str] = []
+
+    class CountingStore(InMemoryExperimentStore):
+        def list_records(self, **kwargs: Any) -> list[ExperimentRecord]:
+            calls.append("read")
+            clock.now = min(total_timeout, tool_timeout)
+            return super().list_records(**kwargs)
+
+    class DelayedWorker:
+        def __init__(self, *, target: Any, name: str, daemon: bool) -> None:
+            self.target = target
+
+        def start(self) -> None:
+            if expiry_point == "before_read":
+                clock.now = min(total_timeout, tool_timeout)
+                self.target()
+            else:
+                # Run after the waiter is armed, then deliver the observation late.
+                asyncio.get_running_loop().call_soon(self.target)
+
+    monkeypatch.setattr(runtime, "threading", SimpleNamespace(Thread=DelayedWorker))
+    model = ScriptedModel(tool("list_experiments"), final())
+    result = await run(
+        model,
+        CountingStore(),
+        total_timeout_seconds=total_timeout,
+        tool_timeout_seconds=tool_timeout,
+    )
+    assert result["status"] == "timed_out"
+    assert result["stop_reason"] == reason
+    assert calls == ([] if expiry_point == "before_read" else ["read"])
+    assert len(model.messages) == 1
+    assert result["tool_trace"][0]["recoverable"] is False
+    assert "result" not in result["tool_trace"][0]
+    assert capacity.acquire(blocking=False)
+    capacity.release()
+
+
+async def test_compare_skips_second_store_read_after_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: clock.now))
+    calls: list[str] = []
+
+    class SlowFirstRead(InMemoryExperimentStore):
+        def get(self, experiment_id: str) -> ExperimentRecord | None:
+            calls.append(experiment_id)
+            clock.now = 1.0
+            return record(experiment_id)
+
+    model = ScriptedModel(
+        tool("compare_experiments", left_id="left", right_id="right", metrics=["auc"])
+    )
+    result = await run(model, SlowFirstRead(), tool_timeout_seconds=1)
+    assert calls == ["left"]
+    assert (result["status"], result["stop_reason"]) == ("timed_out", "tool_timeout")
+    assert result["tool_trace"][0]["recoverable"] is False
+    assert "result" not in result["tool_trace"][0]
+    assert result["citations"] == []
 
 
 async def test_blocking_tool_timeout_does_not_block_event_loop_or_start_more_reads() -> None:
