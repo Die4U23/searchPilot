@@ -272,3 +272,25 @@ def test_candidate_selection_many_cutoff_ties_uses_item_id() -> None:
     index = _selection_index(np.ones((257, 2), dtype=np.float32), ("news",) * 257)
     result = index.search(np.array([1, 0], dtype=np.float32), 100)
     assert result == [(f"N{row:04}", 1.0) for row in range(100)]
+
+
+@pytest.mark.parametrize("limit", [1, 2, 3, 10, 513, 999])
+def test_partition_cutoff_keeps_higher_scores_and_all_tie_candidates(limit: int) -> None:
+    matrix = np.tile([0.5, 0], (513, 1)).astype(np.float32)
+    matrix[:2] = [[1, 0], [0.9, 0]]
+    index = _selection_index(matrix, ("news",) * len(matrix))
+    query = np.array([1, 0], dtype=np.float32)
+    expected = _reference_vector_search(index, query, limit, None)
+    actual = index.search(query, limit)
+    assert [(item, score.hex()) for item, score in actual] == [
+        (item, score.hex()) for item, score in expected
+    ]
+
+
+def test_partition_cutoff_preserves_unicode_ids_and_duplicate_keys() -> None:
+    matrix = np.ones((8, 2), dtype=np.float32)
+    index = _selection_index(matrix, ("news",) * len(matrix))
+    index.item_ids = ("中", "a", "A", "ä", "same", "same", "z", "Z")
+    query = np.array([1, 0], dtype=np.float32)
+    for limit in (1, 3, 6, 8, 9):
+        assert index.search(query, limit) == _reference_vector_search(index, query, limit, None)

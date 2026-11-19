@@ -16,7 +16,7 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health/live", response_model=LiveResponse)
-def live() -> LiveResponse:
+async def live() -> LiveResponse:
     return LiveResponse()
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from threading import TIMEOUT_MAX
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     data_dir: Path = Path("./data")
     artifact_dir: Path = Path("./artifacts")
     vector_warmup: bool = False
+    allocator_trim_interval_seconds: float = Field(
+        default=0, ge=0, le=TIMEOUT_MAX, allow_inf_nan=False
+    )
     data_version: str | None = None
     max_query_chars: int = Field(default=256, ge=1)
     max_limit: int = Field(default=100, ge=1)

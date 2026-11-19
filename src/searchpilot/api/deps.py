@@ -19,42 +19,42 @@ from searchpilot.ports import (
 )
 
 
-def get_app_settings(request: Request) -> Settings:
+async def get_app_settings(request: Request) -> Settings:
     settings: Settings = request.app.state.settings
     return settings
 
 
-def get_search(request: Request) -> SearchPort | None:
+async def get_search(request: Request) -> SearchPort | None:
     service: SearchPort | None = request.app.state.search
     return service
 
 
-def get_recommend(request: Request) -> RecommendPort | None:
+async def get_recommend(request: Request) -> RecommendPort | None:
     service: RecommendPort | None = request.app.state.recommend
     return service
 
 
-def get_feedback(request: Request) -> FeedbackStore | None:
+async def get_feedback(request: Request) -> FeedbackStore | None:
     store: FeedbackStore | None = request.app.state.feedback
     return store
 
 
-def get_items(request: Request) -> ItemStore | None:
+async def get_items(request: Request) -> ItemStore | None:
     store: ItemStore | None = request.app.state.items
     return store
 
 
-def get_probes(request: Request) -> Sequence[ReadinessProbe]:
+async def get_probes(request: Request) -> Sequence[ReadinessProbe]:
     probes: Sequence[ReadinessProbe] = request.app.state.probes
     return probes
 
 
-def get_ctr(request: Request) -> CtrRuntime | None:
+async def get_ctr(request: Request) -> CtrRuntime | None:
     service: CtrRuntime | None = request.app.state.ctr
     return service
 
 
-def get_experiments(request: Request) -> ExperimentStore | None:
+async def get_experiments(request: Request) -> ExperimentStore | None:
     store: ExperimentStore | None = request.app.state.experiments
     return store
 

@@ -167,10 +167,15 @@ class VectorIndex:
         if finite_count == 0:
             return []
         k = min(limit, finite_count)
-        candidates = np.flatnonzero(np.isfinite(scores)).tolist()
-        chosen = heapq.nsmallest(
-            k,
-            candidates,
+        finite = np.isfinite(scores)
+        finite_scores = scores[finite]
+        cutoff = np.partition(finite_scores, finite_count - k)[finite_count - k]
+        above = np.flatnonzero(finite & (scores > cutoff))
+        tied = np.flatnonzero(scores == cutoff)
+        needed = k - len(above)
+        cutoff_chosen = heapq.nsmallest(needed, tied, key=lambda index: self.item_ids[index])
+        chosen = sorted(
+            [*above, *cutoff_chosen],
             key=lambda index: (-float(scores[index]), self.item_ids[index]),
         )
         return [(self.item_ids[index], float(scores[index])) for index in chosen]
