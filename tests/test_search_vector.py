@@ -106,10 +106,15 @@ def test_missing_vector_index_still_raises() -> None:
 
 def test_vector_roundtrip(tmp_path: Path) -> None:
     index = _index()
+    index.categories = ("Straße", "strasse", "news", "weather")
     save_vector_index(tmp_path, index)
     loaded = load_vector_index(tmp_path)
     assert loaded.model_version == index.model_version
-    assert loaded.search(np.array([1.0, 0.0]), 1)[0][0] == "BOTH"
+    assert loaded.categories == index.categories
+    query = np.array([1.0, 0.0])
+    assert loaded.search(query, 1)[0][0] == "BOTH"
+    for candidate in (index, loaded):
+        assert candidate.search(query, 2, category="STRASSE") == [("BOTH", 1.0), ("BM25", 0.0)]
 
 
 def test_vector_tie_break_uses_item_id_at_cutoff() -> None:
@@ -126,10 +131,11 @@ def test_vector_tie_break_uses_item_id_at_cutoff() -> None:
     assert [item_id for item_id, _score in ranked] == ["A", "B"]
 
 
-def test_vector_dim_mismatch_raises() -> None:
+@pytest.mark.parametrize("category", [None, "missing"])
+def test_vector_dim_mismatch_raises(category: str | None) -> None:
     index = _index()
     with pytest.raises(ValueError, match="query dim"):
-        index.search(np.array([1.0, 0.0, 0.0], dtype=np.float32), 2)
+        index.search(np.array([1.0, 0.0, 0.0], dtype=np.float32), 2, category=category)
 
 
 def test_vector_hash_mismatch_raises(tmp_path: Path) -> None:

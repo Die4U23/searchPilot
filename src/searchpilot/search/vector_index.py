@@ -135,6 +135,19 @@ class VectorIndex:
         self.meta = meta
 
     @property
+    def categories(self) -> tuple[str, ...]:
+        return self._categories
+
+    @categories.setter
+    def categories(self, categories: tuple[str, ...]) -> None:
+        category_ids: dict[str, int] = {}
+        codes = np.empty(len(categories), dtype=np.int32)
+        for row, category in enumerate(categories):
+            codes[row] = category_ids.setdefault(category.casefold(), len(category_ids))
+        self._categories = categories
+        self._category_lookup = category_ids, codes
+
+    @property
     def model_version(self) -> str:
         return self.meta.model_version
 
@@ -153,23 +166,19 @@ class VectorIndex:
             )
         if float(np.linalg.norm(vector)) == 0.0:
             return []
-        scores = self.matrix @ vector
-        eligible = np.ones(scores.shape[0], dtype=bool)
+        category_ids, category_codes = self._category_lookup
+        category_id = None
         if category is not None:
-            wanted = category.casefold()
-            eligible = np.fromiter(
-                (value.casefold() == wanted for value in self.categories),
-                dtype=bool,
-                count=len(self.categories),
-            )
-        scores = np.where(eligible, scores, -np.inf)
-        finite_count = int(np.isfinite(scores).sum())
-        if finite_count == 0:
-            return []
-        k = min(limit, finite_count)
-        candidates = np.flatnonzero(np.isfinite(scores)).tolist()
+            category_id = category_ids.get(category.casefold())
+            if category_id is None:
+                return []
+        scores = self.matrix @ vector
+        eligible = np.isfinite(scores)
+        if category_id is not None:
+            eligible &= category_codes == category_id
+        candidates = np.flatnonzero(eligible).tolist()
         chosen = heapq.nsmallest(
-            k,
+            limit,
             candidates,
             key=lambda index: (-float(scores[index]), self.item_ids[index]),
         )
