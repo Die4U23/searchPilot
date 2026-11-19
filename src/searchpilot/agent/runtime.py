@@ -170,17 +170,28 @@ def _bounded_json(value: Any, maximum: int) -> str:
     return "".join(parts)
 
 
+class _AgentDeadlineError(TimeoutError):
+    """The host's deadline expired for this decision or tool."""
+
+
+def _check_deadline(deadline: float) -> None:
+    if time.monotonic() >= deadline:
+        raise _AgentDeadlineError
+
+
 class _ReadStore:
     """Capture provenance from the same records actually read by a selected tool."""
 
-    def __init__(self, store: ExperimentStore) -> None:
+    def __init__(self, store: ExperimentStore, deadline: float) -> None:
         self.store = store
+        self.deadline = deadline
         self.origins: set[tuple[str, str]] = set()
 
     def put(self, record: ExperimentRecord) -> None:
         raise RuntimeError("read_only")
 
     def get(self, experiment_id: str) -> ExperimentRecord | None:
+        _check_deadline(self.deadline)
         record = self.store.get(experiment_id)
         if record:
             self.origins.add((record.source, record.protocol_version))
@@ -189,12 +200,14 @@ class _ReadStore:
     def list_records(
         self, *, source: str | None = None, kind: str | None = None, limit: int = 20
     ) -> list[ExperimentRecord]:
+        _check_deadline(self.deadline)
         return self.store.list_records(source=source, kind=kind, limit=limit)
 
 
 async def _read_tool(
-    store: ExperimentStore, name: str, args: dict[str, Any], maximum: int, timeout: float
+    store: ExperimentStore, name: str, args: dict[str, Any], maximum: int, deadline: float
 ) -> tuple[dict[str, Any], set[tuple[str, str]]]:
+    _check_deadline(deadline)
     capacity = _WORKERS
     if not capacity.acquire(blocking=False):
         return {"ok": False, "error": "tool_capacity_exhausted"}, set()
@@ -206,8 +219,9 @@ async def _read_tool(
             future.set_result(value)
 
     def worker() -> None:
-        proxy = _ReadStore(store)
+        proxy = _ReadStore(store, deadline)
         try:
+            _check_deadline(deadline)
             result = call_tool(proxy, name, args)
             # Round-trip snapshots mutable store data; rejected/truncated results are not evidence.
             result = json.loads(_bounded_json(result, maximum))
@@ -218,6 +232,9 @@ async def _read_tool(
                     for _, protocol in list(proxy.origins):
                         proxy.origins.add((row["source"], protocol))
             value = ({"ok": True, "result": result}, proxy.origins)
+        except _AgentDeadlineError:
+            # The waiter expires at this same deadline.
+            return
         except ToolError as exc:
             code = {
                 "experiment does not exist": "experiment_not_found",
@@ -240,7 +257,7 @@ async def _read_tool(
     except Exception:
         capacity.release()
         return {"ok": False, "error": "tool_error"}, set()
-    return await asyncio.wait_for(future, timeout)
+    return await asyncio.wait_for(future, max(0, deadline - time.monotonic()))
 
 
 def _metric_citations(name: str, result: dict[str, Any]) -> set[str]:
@@ -311,8 +328,11 @@ def _consume(task: asyncio.Task[Any]) -> None:
         task.exception()
 
 
-async def _decide(model: AgentModel, messages: list[dict[str, Any]]) -> dict[str, Any]:
+async def _decide(
+    model: AgentModel, messages: list[dict[str, Any]], deadline: float
+) -> dict[str, Any]:
     # The wrapper also sanitizes providers violating the async Protocol at call time.
+    _check_deadline(deadline)
     return await model.decide(messages)
 
 
@@ -356,22 +376,27 @@ async def run_agent(
         }
 
     for index in range(1, limits.max_steps + 1):
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        if time.monotonic() >= deadline:
             return finish("timed_out", "total_timeout")
         step: dict[str, Any] = {"step": index}
         steps.append(step)
         # A separate snapshot prevents providers from rewriting previous evidence/messages.
-        task = asyncio.create_task(_decide(model, json.loads(json.dumps(messages))))
+        task = asyncio.create_task(_decide(model, json.loads(json.dumps(messages)), deadline))
         try:
-            done, _ = await asyncio.wait({task}, timeout=remaining)
+            done, _ = await asyncio.wait({task}, timeout=max(0, deadline - time.monotonic()))
             if not done:
                 task.cancel()
                 task.add_done_callback(_consume)
-                step.update(type="error", error="model_timeout")
-                return finish("timed_out", "total_timeout")
+                raise _AgentDeadlineError
+            if time.monotonic() >= deadline:
+                _consume(task)
+                raise _AgentDeadlineError
             action = task.result()
             error = _action_error(action)
+            _check_deadline(deadline)
+        except _AgentDeadlineError:
+            step.update(type="error", error="model_timeout")
+            return finish("timed_out", "total_timeout")
         except asyncio.CancelledError:
             task.cancel()
             task.add_done_callback(_consume)
@@ -383,9 +408,6 @@ async def run_agent(
         except Exception:
             step.update(type="error", error="model_error")
             return finish("failed", "model_error")
-        if time.monotonic() >= deadline:
-            step.update(type="error", error="model_timeout")
-            return finish("timed_out", "total_timeout")
         if error:
             step.update(type="error", error=error)
             messages.append(
@@ -450,28 +472,30 @@ async def run_agent(
         messages.append({"role": "assistant", "content": json.dumps(action, ensure_ascii=False)})
         entry: dict[str, Any] = {"tool": name, "arguments": args}
         trace.append(entry)
-        tool_remaining = max(0, deadline - time.monotonic())
+        tool_deadline = min(deadline, time.monotonic() + limits.tool_timeout_seconds)
         try:
             observation, observed_origins = await _read_tool(
                 store,
                 name,
                 args,
                 limits.max_observation_bytes,
-                min(limits.tool_timeout_seconds, tool_remaining),
+                tool_deadline,
             )
         except TimeoutError:
             entry.update(ok=False, error="tool_timeout", recoverable=False)
             step["ok"] = False
             reason = (
                 "total_timeout"
-                if tool_remaining <= limits.tool_timeout_seconds or time.monotonic() >= deadline
+                if tool_deadline == deadline or time.monotonic() >= deadline
                 else "tool_timeout"
             )
             return finish("timed_out", reason)
-        if time.monotonic() >= deadline:
-            entry.update(ok=False, error="total_timeout", recoverable=False)
+        now = time.monotonic()
+        if now >= tool_deadline:
+            reason = "total_timeout" if now >= deadline else "tool_timeout"
+            entry.update(ok=False, error=reason, recoverable=False)
             step["ok"] = False
-            return finish("timed_out", "total_timeout")
+            return finish("timed_out", reason)
         entry.update(observation)
         step["ok"] = observation["ok"]
         if observation["ok"]:
