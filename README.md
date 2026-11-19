@@ -1,219 +1,106 @@
 # SearchPilot
 
-一个可评估的搜索与广告排序实验平台：**BM25 / 向量 / RRF 搜索 + 广告 CTR 预估与校准 + 回退推荐 + 实验来源登记**。
-上游 EvoRec 的实验结果只会以**标注来源**（`source`、`source_ref`、commit、SHA-256）的方式被引用，不会被当作本项目的实测结论。
+SearchPilot 在 MIND Small 新闻数据上比较 BM25 关键词检索、BGE 向量检索、RRF 排名融合和线性 LTR 重排四种方法。它们共用一个 FastAPI 接口和一套查询标注，可以对同一个问题比较返回结果，再用离线指标解释差异。
 
-> 当前阶段：搜索（BM25 / 向量 / RRF / LTR）、回退推荐、反馈、CTR 校准、合成出价 eCPM、实验登记和只读 Agent 都已接到 API。Agent 默认确定性调用，可显式启用[有界多步 LLM 模式](docs/dev/autonomous-agent.md)，根据工具观察继续选择动作、修订计划并结束。历史外部模型两阶段夹具评测为 46/50，不作为新多步能力的成绩。
-
-2026-10-27 多步 Agent 的[真实模型与容器 HTTP 验证](docs/data/agent-multistep-2026-10-27.md)：最终 8/8 任务正常结束，原评分 6/8；修复评分器后对相同轨迹事后复算 8/8，未新增模型调用。保留全部失败与边界；三小时内存验证已完成但未通过稳定性门槛，剩余增长尚未解决。
-
-2026-10-13 接手结果见 [本轮验收](docs/dev/acceptance-2026-10-13.md)：补齐并发压测、train/val 大分歧裁定与外部模型评测入口，并修复向量编码器并发初始化。正式标注入口与模型栈保持冻结，具体口径见 [评估策略](docs/data/evaluation-policy.md)。
-
-2026-10-14 的向量候选扫描优化、真实 HTTP A–B–B–A 对照及资源采样见 [性能报告](docs/data/performance-2026-10-14.md)。外部模型已完成 50 题、100 次真实请求，结构化检查通过 46/50，详见 [外部 LLM 实测](docs/data/agent-llm-live-2026-10-14.md)。
-
-2026-10-15 已优化 ItemCF 拟合内存：5,000 用户对照保持结果一致，无数据库配置的默认应用在 19.8 秒内就绪，8 个核心接口请求通过；详见 [启动验证](docs/data/itemcf-startup-2026-10-15.md)。首次向量请求仍超过 10 秒，未宣称 SLA 达标。
-
-## 架构
-
-```text
-MIND Small                         本地 EvoRec 夹具（不是上游仓库的一次真实运行）
-    |                                          |
-    v                                          v
-清洗 / 时间切分 / 查询标注 ---------> PostgreSQL（物品、反馈、实验、指标）
-    |
-    +--> BM25 倒排
-    +--> bge-small 向量（精确余弦）
-    +--> pairwise LTR
-    +--> CTR（LR / MLP）+ 验证集上的温度缩放
-    |
-    v
-FastAPI：/search  /recommend  /feedback  /ctr/score
-         /experiments/{id}  /agent/analyze  /health/*
-    |
-只读 Agent：六个窄工具，引用带 source
-```
-
-没有数据库时，反馈在内存里，实验登记读 `artifacts/experiments/registry.json`。
-
-## 数据
-
-MIND Small，研究用途，原始文件不进 Git。下载脚本核对 SHA-256。`data_version` `d3a904f41240`：物品 65238，曝光 8584442，用户历史 50000。train 为 2019-11-09 至 2019-11-14，dev 为 2019-11-15。
-
-查询集 100 条，种子 `20261009`，按查询切成 70 / 15 / 15，六类都有样本。双标 20 条、206 对：完全一致 0.9272，相邻一致 1.0，二次加权 kappa 0.9702。当前 `annotator` 是 `grok-a` 和 `grok-b`。详见 `docs/data/annotation-report.md`。
-
-Agent 固定任务中的 `evorec-itemcf` 是本地夹具，用来检查跨来源比较会被拒绝。另行导入的五份真实 EvoRec 结果及其固定 commit、SHA-256 见文末来源表，不能与夹具混用。
+同一服务也提供热门与 ItemCF 回退推荐、点击反馈、广告点击率（CTR）预估与校准。实验登记保存指标、评估协议和来源，只读 Agent 可以据此回答“哪次实验、在哪个切分上、测到了什么”。
 
 ## 快速开始
 
-需要 Python 3.12。
+第一次运行时，在仓库根目录用 Python 3.12 下载数据、构建索引，再启动 API。这个 BM25 示例使用本地文件，首次安装和下载需要联网。
 
 ```powershell
-# 1. 创建虚拟环境并安装（含开发与研究依赖）
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -e ".[dev,research]"
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
 
-# 2. 启动 API（默认 127.0.0.1:8000）
-.venv\Scripts\python.exe scripts\run_api.py --host 127.0.0.1 --port 8000
-
-# 3. 质量命令
-.venv\Scripts\python.exe -m ruff check .
-.venv\Scripts\python.exe -m ruff format --check .
-.venv\Scripts\python.exe -m mypy src
-.venv\Scripts\python.exe -m pytest                 # 单元测试（默认不含 integration）
-.venv\Scripts\python.exe -m pytest -m integration  # 需要 SEARCHPILOT_DATABASE_URL 指向 PostgreSQL
+python scripts/download_mind.py
+python scripts/build_dataset.py
+python scripts/build_index.py
+python scripts/run_api.py
 ```
 
-Linux / macOS 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可。
+Linux / macOS 使用 `python3.12 -m venv .venv` 和 `source .venv/bin/activate`，后续 `python` 命令相同。已有 `data/processed/<data_version>/` 和 `artifacts/search/bm25/` 时，可以直接启动 API。
 
-索引、推荐模型等产物缺失时 API 仍可启动：对应接口返回 `503 NOT_READY`，`/health/ready` 返回 503，不会静默返回空结果。
-
-### 数据 → 索引 → 评估 → 服务
+服务启动后，在另一个 PowerShell 窗口搜索 `microsoft`。
 
 ```powershell
-# 1. 下载并解压 MIND Small（官方 blob 已关闭公共访问，脚本使用 Hugging Face 上的 Recommenders/MIND）
-.venv\Scripts\python.exe scripts\download_mind.py --raw-dir data\raw\mind
-
-# 2. 解析、时间切分、写 Parquet 与 manifest 到 data\processed\<data_version>\
-.venv\Scripts\python.exe scripts\build_dataset.py --raw-dir data\raw\mind --out-dir data\processed
-
-# 3. 建 BM25 倒排索引到 artifacts\search\bm25\（打印 model_version / doc_count / vocab_size）
-.venv\Scripts\python.exe scripts\build_index.py --data-dir data --artifact-dir artifacts
-
-# 3b.（可选，V1）建 bge-small 向量索引。需要先 pip install -e ".[vector]"
-.venv\Scripts\python.exe scripts\build_vector_index.py --data-dir data --artifact-dir artifacts
-
-# 3c.（可选，V1）训练线性 pairwise LTR（只读 split=train；需要向量索引）
-.venv\Scripts\python.exe scripts\train_ltr.py --data-dir data --artifact-dir artifacts
-
-# 4. 离线评估
-#    搜索：按 query_type 分组的 nDCG@10 / MRR@10 / Recall@50 + 失败样例（查询集见 data\queries\，标注规范见 docs\data\annotation-guideline.md）
-.venv\Scripts\python.exe scripts\evaluate_search.py --artifact-dir artifacts --queries data\queries\queries.csv --labels data\queries\labels.csv --split test --out artifacts\search\eval
-#    多模式对比（bm25 / vector / hybrid / ltr），输出 search_mode_compare_<split>.md
-.venv\Scripts\python.exe scripts\compare_search_modes.py --artifact-dir artifacts --queries data\queries\queries.csv --labels data\queries\labels.csv --split test --out artifacts\search\eval
-#    回退推荐：Popular / ItemCF 在 dev 切分上的 Recall@20 / nDCG@10 / coverage@10，按冷启动分段
-.venv\Scripts\python.exe scripts\evaluate_fallback.py --data-dir data --output-json artifacts\recommend\eval.json --output-md artifacts\recommend\eval.md
-
-# 5.（可选）PostgreSQL：迁移、导入物品，并把已测实验写入数据库
-#    设置 SEARCHPILOT_DATABASE_URL 后，反馈、就绪检查和实验查询走数据库。
-#    数据库模式下 API 不读 registry.json，已测实验要用 --database-url 写入。
-.venv\Scripts\python.exe scripts\migrate_database.py                       # 读 SEARCHPILOT_DATABASE_URL，或 --database-url
-.venv\Scripts\python.exe scripts\seed_items.py data\processed\<data_version>\items.parquet
-.venv\Scripts\python.exe scripts\seed_catalog.py
-.venv\Scripts\python.exe scripts\seed_impressions.py --impressions data\processed\<data_version>\impressions.parquet --history data\processed\<data_version>\user_history.parquet
-.venv\Scripts\python.exe scripts\register_measured.py --database-url $env:SEARCHPILOT_DATABASE_URL
-
-# 6. 启动 API（读取 SEARCHPILOT_DATA_DIR / SEARCHPILOT_ARTIFACT_DIR，默认 .\data 与 .\artifacts）
-.venv\Scripts\python.exe scripts\run_api.py
+$api = 'http://127.0.0.1:8000'
+$body = @{ query = 'microsoft'; mode = 'bm25'; limit = 1 } | ConvertTo-Json
+$result = Invoke-RestMethod "$api/search" -Method Post -ContentType 'application/json' -Body $body
+$result.results
 ```
 
-`data/raw/`、`data/processed/`、`artifacts/` 不入库；`data_version` 与 `model_version` 都是输入内容的哈希，同样输入可复现同样版本号。
+在数据版本 `d3a904f41240` 上，第一条结果的 `item_id` 是 `N58995`。浏览器打开 `http://127.0.0.1:8000/docs` 可以试用其他接口。只建 BM25 时，搜索可用，`/health/ready` 会返回 503，响应里的 `checks` 会列出尚未就绪的组件。
 
-### Docker
+### 启用向量、融合与重排
 
-需要 Docker Desktop（Linux 容器）。`docker compose up --build` 在容器里的 PostgreSQL 上先跑迁移。物品表、查询目录和已测实验如果是空的，会从挂载的 `data/` 与 `artifacts/` 导入一次。曝光表不导入。然后启动 API，端口是 `8000`。`data/` 和 `artifacts/` 以只读方式挂进去，不打进镜像。镜像安装 `vector` 额外依赖，并在构建时下载 `BAAI/bge-small-en-v1.5`，所以向量和 LTR 检索可以在容器里运行。第一次构建需要网络，镜像比默认安装大。
+在已激活的虚拟环境中构建向量索引和 LTR 模型，再重启 API 以加载新产物。请求中的 `mode` 可换为 `vector`、`hybrid`（RRF）或 `ltr`。
 
-配置来自环境变量，应用项使用 `SEARCHPILOT_` 前缀，容器与 glibc 项另行标注，见 [`.env.example`](.env.example)。
-
-Docker/Compose 默认设置 `SEARCHPILOT_VECTOR_WARMUP=true`，在监听请求前加载向量模型并完成一次编码，避免把初始化延迟留给首个搜索请求。这会增加启动等待时间；预热失败时 BM25 仍可调用，`/health/ready` 返回 503，向量、混合与 LTR 搜索不可用，修复后需重启。容器健康检查仍检查 `/health/live`；流量准入应检查 `/health/ready`。直接运行 Python 默认不预热，可通过同名环境变量开启（Settings 不自动读取 `.env`）。
-
-Linux/glibc 容器默认使用进程级 `SEARCHPILOT_DISABLE_THP=true` 和 `MALLOC_ARENA_MAX=2`，不执行定时 GC/trim。显式设置 `MALLOC_ARENA_MAX=0` 并重新创建 API 容器可恢复该 glibc 的自动 arena 上限策略；删除或留空会采用默认值 2。
-
-最新[扩大查询与并发验证](docs/data/container-expanded-soak-2026-10-25.md)将查询从 100 扩为 1,300 条，按并发 4 / 16 / 32 分别运行 15 / 15 / 60 分钟。正式请求 **9,358 / 12,538 / 53,309** 次全部成功，5,200 个查询×模式组跨档指纹一致。一小时末 20 分钟 RSS 增长 **1.535 MiB**、OLS **0.0936 MiB/分钟**，通过预设 2 MiB / 0.1 MiB/分钟门槛；全小时仍增长 55.984 MiB，不能称为零增长或无限运行无泄漏。各档 17 项业务与重启检查通过。报告保留背景容器争用、全部五分钟窗口及原始证据，吞吐数据不作因果加速或容量 SLA 结论。
-
-后续[三小时并发32验证](docs/data/container-memory-three-hour-2026-10-27.md)完成 **144,053/144,053** 正式请求，结果指纹、健康、业务和重启检查通过；但固定第二、第三小时RSS/Anonymous各增长 **5.8125 MiB**，未通过联合稳定性门槛。arena1候选被拒绝推广，生产默认仍为arena2；剩余内存增长尚未解决。
-
-此前[容器内存对照与一小时验证](docs/data/container-memory-arena-2026-10-25.md)定位了 THP 与 glibc 空闲内存保留的贡献。持续并发 4 的顺序 A→B 对照各完成 16,000 请求，400→16k RSS 增长分别为 45.953/3.609 MiB，结果指纹一致；背景负载差异保留，不据此宣称吞吐提升。最终正常入口一小时 **53,650/53,650** 请求成功，末 20 分钟 RSS 增长 **0.6875 MiB**、斜率 **0.0349 MiB/分钟**，通过预设内存门槛；17 项业务与重启检查通过。健康采样实际 361 轮全部成功，名义 360 轮的边界差异见报告。结论限于固定查询集、单进程、并发 4 和一小时观察，不代表无限运行无泄漏。
-
-此前[一小时验证](docs/data/container-hour-2026-10-23.md)修复了共享 Snowball 词干器的并发状态污染，[十分钟验证](docs/data/container-soak-2026-10-22.md)修复了启动导入的事务原子性。
-
-## 目录结构
-
-```text
-src/searchpilot/
-  ports.py          模块间 Protocol 与数据类（契约锚点，只读）
-  config.py         Settings（SEARCHPILOT_ 前缀环境变量）
-  observability.py  JSON 日志与 request_id
-  errors.py         统一错误信封与异常处理器
-  contracts.py      请求/响应 Pydantic 模型
-  bootstrap.py      create_app / build_default_app
-  api/              中间件与路由（health、search、recommend、feedback、ctr、experiments、agent）
-  search/           BM25、RRF、搜索服务与评估
-  recommend/        热门 / ItemCF 回退推荐
-  feedback/         反馈幂等写入（内存实现）
-  db/  data/        PostgreSQL 仓储、迁移；MIND 数据解析与快照
-scripts/            run_api.py 及数据 / 索引 / 评估脚本
-tests/              单元测试（不联网、不连库、不加载模型）
-docs/dev/           并行开发契约（build-plan.md）
+```powershell
+python -m pip install -e ".[vector]"
+python scripts/build_vector_index.py
+python scripts/train_ltr.py
+python scripts/compare_search_modes.py --split test
 ```
 
-## API 一览
+最后一条命令用同一批查询比较四种模式，写出 `artifacts/search/eval/search_mode_compare_test.md`。只有 BM25 时可运行 `python scripts/evaluate_search.py --split test`。
 
-| 接口 | 说明 |
-|---|---|
-| `GET /health/live` | 进程存活 |
-| `GET /health/ready` | 依赖就绪；任一未就绪返回 503 与 `checks` |
-| `POST /search` | `query`、`limit`、`mode`（`bm25` 默认）、`filters.category` |
-| `POST /recommend` | `user_id`、`limit`；仅回退通道，返回 `cold_start` |
-| `POST /feedback` | 带 `idempotency_key` 的幂等写入，成功 201，冲突 409 |
-| `POST /ctr/score` | CTR 打分；模型未加载时 503，不返回空列表 |
-| `GET /experiments/{experiment_id}` | 实验配置、指标、`source` 与 `source_ref` |
-| `POST /agent/analyze` | 只读实验分析；只用六个窄工具 |
+### 使用 Docker 和 PostgreSQL
 
-所有响应带 `request_id`（同时在响应头 `X-Request-Id`）；错误统一为
-`{"error": {"code", "message", "retryable", "request_id"}}`。字段、限制与错误码的完整定义见
-[docs/dev/build-plan.md](docs/dev/build-plan.md) 第 4 节。
+准备好本地 `data/` 和 `artifacts/` 后，运行 `docker compose up --build`，API 监听端口 8000。Compose 启动 PostgreSQL 16，把两个目录只读挂载到 API 容器。入口先执行迁移，有数据快照时为空表导入物品、查询目录与已登记的实验。曝光数据需要单独导入。[Compose 配置](docker-compose.yml) · [数据导入脚本](scripts/seed_impressions.py)
 
-空查询：
+镜像在构建时下载 `BAAI/bge-small-en-v1.5`，默认在服务启动时预热已有向量索引的编码器。容器健康检查使用 `/health/live`，接入依赖全部组件的流量时使用 `/health/ready`。[预热对照](docs/data/vector-startup-2026-10-22.md)
 
-```http
-POST /search
-{"query": ""}
-```
+## API
 
-```json
-{"error": {"code": "INVALID_INPUT", "message": "body.query: String should have at least 1 character", "retryable": false, "request_id": "req_..."}}
-```
+| 接口 | 用途 |
+| --- | --- |
+| `POST /search` | 提交 `query`，可指定 `mode`、`limit` 和 `filters.category`。响应包含排名、分数和模型版本。 |
+| `POST /recommend` | 按 `user_id` 请求回退推荐，响应标明推荐通道和冷启动状态。 |
+| `POST /feedback` | 用 `idempotency_key` 幂等写入反馈，同一键对应不同事件时返回 409。 |
+| `POST /ctr/score` | 返回候选物品的原始与校准点击率。传入 `bid` 时也返回 eCPM。 |
+| `GET /experiments/{experiment_id}` | 查看实验配置、指标、来源 `source` 和引用 `source_ref`。 |
+| `POST /agent/analyze` | 提交 `{"question":"..."}`，通过六个只读工具查询已登记实验。 |
+| `GET /health/live`、`GET /health/ready` | 分别检查进程存活和组件就绪状态。 |
 
-有结果的搜索（本机 BM25，`microsoft`，`limit=1`）：
+每个响应都带 `X-Request-Id` 请求头。设置 `SEARCHPILOT_API_TOKEN` 后，表中除存活探针外的接口须携带 `Authorization: Bearer <token>`。写反馈还须提供与 `user_id` 相同的 `X-Actor`。[请求与响应模型](src/searchpilot/contracts.py) · [配置示例](.env.example)
 
-```json
-{"request_id": "req_...", "normalized_query": "microsoft", "model_version": "bm25-4f46b3d8", "mode": "bm25", "results": [{"item_id": "N58995", "score": 24.661796673688574, "rank": 1, "channel": "bm25"}]}
-```
+无数据库时，反馈保存在内存中，重启即清空。要在此模式下试用实验查询和 Agent，先运行 `python scripts/register_measured.py` 生成本地登记文件，再启动 API，即可查询 `GET /experiments/sp-bm25`。Agent 默认使用确定性规则。要让模型根据工具结果决定下一步，可在服务端显式启用有界多步 LLM 模式。[Agent 配置与调用示例](docs/dev/autonomous-agent.md)
 
-模型未加载时对应接口返回 503 `NOT_READY`。
+## 数据与评测
 
-## Agent
+MIND Small 数据快照 `d3a904f41240` 含 65,238 条新闻、8,584,442 条曝光和 50,000 份用户历史。仓库提供查询、标注和构建脚本，原始数据需另行下载，处理快照与索引由脚本在本地生成。
 
-`scripts/evaluate_agent.py` 保留确定性模式的50条固定任务，不调用外部语言模型。旧评测的50/50只检查工具名属于白名单，27/27只检查引用非空；历史[两阶段外部实测](docs/data/agent-llm-live-2026-10-14.md)为46/50结构化通过，不能证明多步规划或自由文本质量。新API可显式启用[有界多步LLM模式](docs/dev/autonomous-agent.md)，通过 `scripts/evaluate_agent_multistep.py` 独立验证。最新[真实多步与容器验证](docs/data/agent-multistep-2026-10-27.md)保留最终原评分6/8、修复评分器后零新增调用的事后复算8/8及所有失败；两类成绩不混用。
+### 搜索
 
-## 已测结果（搜索 2026-10-09，CTR 2026-10-10）
+100 条查询按 70 / 15 / 15 切分为训练、验证和测试集。下表使用正式标注 `labels.csv`。15 条测试查询中，1 条没有已知相关文档，三个指标均在其余 14 条上计算。[四模式实验报告](docs/data/ltr-report.md)
 
-同一套 15 条 test 查询，数据版本 `d3a904f41240`。下表读的是 `labels.csv`，`annotator` 是 `grok-a` 和 `grok-b`。已标注文档里 97.6% 落在 BM25 前 10，只有 28.1% 落在向量前 10。三路前 10 的并集里还有 938 条不在这份文件中，分数在 `labels_tool.csv`，见 `docs/data/label-pool.md`。把未标注文档移出名单、不另打分后，test 上向量 nDCG@10 从 0.7769 升到 0.9432，LTR 从 0.4596 升到 0.8338，BM25 仍是 0.6396。见 `docs/data/judged-only.md`。把 `labels_tool.csv` 并进来之后，test 与 val 的 nDCG@10 都是向量高于 RRF、高于 BM25、高于 LTR。val 只读 `labels.csv` 时 BM25 最高（0.9056），并集后降到 0.7465，向量升到 0.9161。见 `docs/data/pool-label-eval.md`。
+| 搜索模式 | nDCG@10 | MRR@10 | Recall@50 |
+| --- | ---: | ---: | ---: |
+| BM25 · `bm25-4f46b3d8` | 0.6396 | 0.7143 | 0.7500 |
+| 向量 · `vector-b92663fd` | **0.7769** | **0.8095** | 0.9452 |
+| RRF · `hybrid-51d4dcfb` | 0.7214 | 0.7679 | **1.0000** |
+| LTR · `ltr-4574f8f4` | 0.4596 | 0.4595 | 0.7175 |
 
-| 方案 | nDCG@10 | MRR@10 | Recall@50 |
-|---|---:|---:|---:|
-| BM25 `bm25-4f46b3d8` | 0.6396 | 0.7143 | 0.7500 |
-| 向量 `vector-b92663fd` | 0.7769 | 0.8095 | 0.9452 |
-| RRF `hybrid-51d4dcfb` | 0.7214 | 0.7679 | 1.0000 |
-| LTR `ltr-4574f8f4` | 0.4596 | 0.4595 | 0.7175 |
+向量检索在这组查询上的 nDCG@10 最高，RRF 在前 50 条找回了全部已标注相关文档。LTR 低于两者。诊断发现，模型给 BM25 名次数值学到了正权重，因而可能把 BM25 排名靠后的候选提前。[LTR 权重消融](docs/data/ltr-rank-ablation.md)
 
-LTR 低于 RRF，这是保留的负结果。分数归一化融合（先把 BM25 和向量分各自缩放到 0–1 再平均）在同一 test 集上 nDCG@10 为 0.7710、MRR@10 为 0.7857、Recall@50 为 1.0000，见 `docs/data/normalized-fusion.md`。它不是默认融合。CTR 抽样 test 上 LR AUC 0.4535，MLP 温度缩放后 ECE 0.0063，AUC 仍为 0.4836。同一 test 上 Platt ECE 0.0019、等渗回归 ECE 0.0014，都不是线上默认。合成出价 eCPM 的 Top-1 一致率 0.9180，不是真实广告收入。
+标注覆盖会改变读数。原始候选主要取自 BM25 前十，未标注文档在正式评估中计 0。两个独立 Grok 会话（`grok-a`、`grok-b`）对 206 对候选双标，191 对完全一致。最终 `labels.csv` 有 997 行署名 `grok-a`、15 行署名 `adjudicated`。另有 938 对候选补标。合并补标后，同一批测试查询的向量 nDCG@10 为 0.8796，BM25 为 0.5571。[标注报告](docs/data/annotation-report.md) · [补标对照](docs/data/pool-label-eval.md) · [评估策略](docs/data/evaluation-policy.md)
 
-## 已知限制
+### CTR、Agent 与容器验证
 
-- 未设置 `SEARCHPILOT_DATABASE_URL` 时，实验登记读 `artifacts/experiments/registry.json`，反馈写在内存里。
-- 当前 `labels.csv` 的 `annotator` 是 `grok-a` 和 `grok-b`。换工具时另存 CSV，不要覆盖这两份原始文件。
-- 已保存的 LTR `ltr-4574f8f4` 在补标并集上仍低于向量和 RRF。它的 top 10 里大约六成文档两份标注都没有，nDCG 把这些位置记为 0。拿掉未标注文档后，test nDCG@10 从 0.5266 升到 0.7076，高于 BM25 的 0.5571，仍低于 RRF 的 0.7236。val 上 LTR 仍是最后（0.6959），低于 BM25 的类型是 exact_entity、multi_condition、misspelling_or_abbrev。见 `docs/data/pool-label-eval.md` 和 `docs/data/ltr-query-gaps.md`。
-- 不重新训练，只把已保存的 `bm25_rank` 权重置 0 后，val 上未标注当 0 的 nDCG@10 从 0.5055 升到 0.7762，高于 BM25 的 0.7465。只替换缺席名次 101 做不到这一点。这不是新的线上模型。见 `docs/data/ltr-rank-ablation.md`。
-- 历史外部语言模型固定夹具验证为 46/50；自由文本语义未评分，EvoRec 为本地夹具。新多步模式通过服务端配置启用，最终答案由已验证证据渲染；不支持无限自主运行或跨请求记忆，见[运行边界](docs/dev/autonomous-agent.md)。
-- 分阶段计时见 `docs/data/bench-stages.md`（Windows 11，Python 3.12.6，无 `--reload`）。向量冷启动 15.3 s（含加载模型）；预热后 p50：BM25 1.2 ms，向量 87.7 ms，RRF 91.1 ms，LTR 127.4 ms，CTR 0.04 ms。更早的 BM25 100 次吞吐约 315 req/s，见 `docs/data/bench.md`。
-- 2026-10-13 独立本地 API 并发 4、每模式 120 请求，正式请求共 480/480 成功；预热 15/16 成功，首次向量预热在 10 秒超时。原始记录和 p95/p99 见 `docs/data/bench-concurrent.md`。这是初始化锁修复前的单轮测量，不代表最终版本冷启动、资源或稳定性验收。
-- `docker compose up` 会先迁移，并为空表导入物品、查询目录与已测实验，再启动 API；曝光表不自动导入。
-- Agent 固定任务里的 `evorec-itemcf` 仍是本地夹具。真实结果在下面的来源表里，协议不同，不能和本项目的 nDCG 放在一张提升表里。
+| 实验 | 观测与适用范围 |
+| --- | --- |
+| CTR 校准 | 旧训练流程的抽样测试中，MLP 温度缩放将 ECE 从 0.0374 降至 0.0063，AUC 保持 0.4836。当前训练脚本仅使用曝光时刻之前的正反馈构建历史特征，新口径尚无全量训练指标。[历史指标](docs/data/ctr-report.md) · [时序特征定义](docs/dev/ctr-point-in-time-features.md) |
+| 合成出价排序 | 20,831 次曝光上，原始与校准点击率产生相同首位广告的比例为 0.9180。该实验使用合成出价和日志点击衡量排序变化。[eCPM 对照](docs/data/ecpm-report.md) |
+| 只读 Agent | 历史两阶段评测为 46/50。后续多步实测中，8 个合成任务全部正常结束，原结构化评分为 6/8。修正工具调用顺序的评分规则后，同一批轨迹复算为 8/8，新增模型调用为 0。自由文本语义未评分。[两阶段报告](docs/data/agent-llm-live-2026-10-14.md) · [多步验证](docs/data/agent-multistep-2026-10-27.md) |
+| 容器持续负载 | 1,300 条查询、四种搜索模式、并发 32。三小时内 144,053 次正式请求均成功，5,200 个查询与模式组合各重复 27 至 28 次，每组返回的结果与排名均一致。候选配置 `MALLOC_ARENA_MAX=1` 在第二至第三小时的合并窗口内，RSS 和匿名内存各增长 5.8125 MiB，超过 2 MiB 门槛。该候选未通过长期内存稳定性验收，Compose 默认值为 2。[一小时对照](docs/data/container-expanded-soak-2026-10-25.md) · [三小时报告](docs/data/container-memory-three-hour-2026-10-27.md) |
 
-## 与 EvoRec 的边界
+### EvoRec 实验来源
 
-SearchPilot 自己负责搜索、回退推荐与线上服务。EvoRec 公开仓库是 [Die4U23/EvoRec](https://github.com/Die4U23/EvoRec)，MIT 许可。下面五份 `results.json` 固定在 commit `5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5`，指标名和数值原样导入，`source=evorec`。
+只读 Agent 固定任务中的 `evorec-itemcf` 是本地测试夹具。另行导入的五份 EvoRec 实验结果使用视频游戏推荐协议，保留上游指标、`source=evorec`、提交和文件摘要，单独解读。[上游固定版本](https://github.com/Die4U23/EvoRec/tree/5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5) · [导入脚本](scripts/import_evorec.py)
+
+<details>
+<summary>五份上游 results.json 的路径与 SHA-256</summary>
 
 | 路径 | SHA-256 |
 |---|---|
@@ -223,7 +110,28 @@ SearchPilot 自己负责搜索、回退推荐与线上服务。EvoRec 公开仓�
 | `docs/experiments/r05-ranker/results.json` | `185286a00c86de52e9853be4219148bf4b9e0ab0e141a1b64c52a44077d889c8` |
 | `docs/experiments/r06-multi-interest/results.json` | `a56097096c38317b7b5bdf9bff96a0cccaa386b6114b1e53211d2ed886f04774` |
 
-这些是 EvoRec 自己的视频游戏推荐协议。例如 r05-ranker 的 RRF 在 `all_positive_events` 上 nDCG@10 为 0.006536741003757799（来源：EvoRec `r05-ranker`，commit `5ce1d96b80ddaf3c205a5ef8a6a5e39df6ab0ff5`）。它不能与本项目 MIND 搜索的 nDCG 比较。
+</details>
 
-设置 `SEARCHPILOT_API_TOKEN` 后，除 `GET /health/live` 外请求都要带 `Authorization: Bearer <token>`。`POST /feedback` 还要带 `X-Actor`，并且与 `user_id` 相同。未设置令牌时行为与以前一样。
+## 开发与复现
+
+| 任务 | 入口 |
+| --- | --- |
+| 检索实现与服务组装 | [检索模块](src/searchpilot/search/) · [应用入口](src/searchpilot/bootstrap.py) |
+| 评估热门与 ItemCF 推荐 | [回退推荐评估脚本](scripts/evaluate_fallback.py) · [ItemCF 启动验证](docs/data/itemcf-startup-2026-10-15.md) |
+| 训练与加载 CTR 模型 | [训练脚本](scripts/train_ctr.py) · [推理产物格式](docs/dev/ctr-artifact-contract.md) |
+| 复核压测与历史验收 | [并发延迟](docs/data/bench-concurrent.md) · [分阶段计时](docs/data/bench-stages.md) · [项目交接](docs/dev/handover.md) |
+
+在虚拟环境中运行与 CI 对应的本地检查。下面的临时目录设置用于 Windows。最后一条集成测试需要 `SEARCHPILOT_DATABASE_URL` 指向可用的 PostgreSQL 测试库。
+
+```powershell
+python -m pip install -e ".[dev,research,vector]"
+New-Item -ItemType Directory -Force .tmp | Out-Null
+$env:TMP = (Resolve-Path .tmp).Path
+$env:TEMP = $env:TMP
+python -m ruff check .
+python -m ruff format --check .
+python -m mypy src
+python -m pytest
+python -m pytest -m integration
+```
 
