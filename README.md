@@ -65,7 +65,7 @@ python scripts/compare_search_modes.py --split test
 
 每个响应都带 `X-Request-Id` 请求头。设置 `SEARCHPILOT_API_TOKEN` 后，表中除存活探针外的接口须携带 `Authorization: Bearer <token>`。写反馈还须提供与 `user_id` 相同的 `X-Actor`。[请求与响应模型](src/searchpilot/contracts.py) · [配置示例](.env.example)
 
-无数据库时，反馈保存在内存中，重启即清空。要在此模式下试用实验查询和 Agent，先运行 `python scripts/register_measured.py` 生成本地登记文件，再启动 API，即可查询 `GET /experiments/sp-bm25`。Agent 默认使用确定性规则。要让模型根据工具结果决定下一步，可在服务端显式启用有界多步 LLM 模式。[Agent 配置与调用示例](docs/dev/autonomous-agent.md)
+无数据库时，反馈保存在内存中，重启即清空。要在此模式下试用实验查询和 Agent，先运行 `python scripts/register_measured.py` 生成本地登记文件，再启动 API，即可查询 `GET /experiments/sp-bm25`。Agent 默认使用确定性规则。要让模型根据工具结果决定下一步，可在服务端显式启用有界多步 LLM 模式。超时后会跳过尚未开始的调用与读取，已进入同步读取的线程可能继续运行至返回。[Agent 配置与调用示例](docs/dev/autonomous-agent.md)
 
 ## 数据与评测
 
@@ -85,6 +85,8 @@ MIND Small 数据快照 `d3a904f41240` 含 65,238 条新闻、8,584,442 条曝�
 向量检索在这组查询上的 nDCG@10 最高，RRF 在前 50 条找回了全部已标注相关文档。LTR 低于两者。诊断发现，模型给 BM25 名次数值学到了正权重，因而可能把 BM25 排名靠后的候选提前。[LTR 权重消融](docs/data/ltr-rank-ablation.md)
 
 标注覆盖会改变读数。原始候选主要取自 BM25 前十，未标注文档在正式评估中计 0。两个独立 Grok 会话（`grok-a`、`grok-b`）对 206 对候选双标，191 对完全一致。最终 `labels.csv` 有 997 行署名 `grok-a`、15 行署名 `adjudicated`。另有 938 对候选补标。合并补标后，同一批测试查询的向量 nDCG@10 为 0.8796，BM25 为 0.5571。[标注报告](docs/data/annotation-report.md) · [补标对照](docs/data/pool-label-eval.md) · [评估策略](docs/data/evaluation-policy.md)
+
+LTR 重排会复用 BM25 召回分数。2026-11-19 在同一索引上选取 12 条查询，预热后交替测量四种模式，返回前 10 条结果。LTR 进程内调用的中位耗时从 75.48 ms 降到 48.31 ms，48 组常规结果均与优化前一致。HTTP 端到端延迟另见并发报告。[LTR 优化与测量条件](https://github.com/Die4U23/searchPilot/pull/60) · [HTTP 并发报告](docs/data/bench-concurrent.md)
 
 ### CTR、Agent 与容器验证
 
